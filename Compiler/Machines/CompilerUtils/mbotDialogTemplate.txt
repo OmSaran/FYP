@@ -1,0 +1,20 @@
+var machina = require('machina')
+var replier = require('../Utils/reply')
+var dbUtils = require('../databaseUtils')
+var data = require('../data')
+var bots = require('../bots')
+
+module.exports = machina.Fsm.extend({
+
+    initialize: function (options) {
+        this.uuid = options.uuid;
+        this.parent = options.parent;
+        this.rootIntent = options.rootIntent;
+    },
+
+    initialState: 'startState',
+
+    states:{
+        //states
+    }
+});

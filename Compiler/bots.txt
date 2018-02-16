@@ -1,0 +1,7 @@
+teacherBot - new questions and answers everyday.
+PizzaBot - to showcase toppings.
+Restaurant - table booking.
+Groceries shop.
+Small Business - About us.
+PESU - News app.
+Todo - api bot.

@@ -1,0 +1,23 @@
+{
+  "name": "template",
+  "version": "1.0.0",
+  "description": "BotScript template to generate bots",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "template",
+    "compiled",
+    "code"
+  ],
+  "author": "BotScript",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.18.2",
+    "express": "^4.16.2",
+    "machina": "^2.0.0",
+    "mongodb": "^3.0.2",
+    "semaphore": "^1.1.0"
+  }
+}

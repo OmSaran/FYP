@@ -1,0 +1,113 @@
+{
+        "intents": {
+                "menu": {
+                        "parameters": [],
+                        "utterances": [
+                                "what is the menu",
+                                "show me menu",
+                                "menu",
+                                "I want to see the menu"
+                        ],
+                        "response": {
+                                "value": "This is a menu: 1.pizza",
+                                "type": "text"
+                        }
+                },
+                "order": {
+                        "parameters": [
+                                {
+                                        "name": "size",
+                                        "type": "@size",
+                                        "isList": false
+                                },
+                                {
+                                        "name": "base",
+                                        "type": "@base",
+                                        "isList": false
+                                },
+                                {
+                                        "name": "toppings",
+                                        "type": "@toppings",
+                                        "isList": true
+                                }
+                        ],
+                        "utterances": [
+                                "order",
+                                "let me order",
+                                "I want a @size pizza with @toppings"
+                        ],
+                        "response": {
+                                "value": "order",
+                                "type": "mb"
+                        }
+                },
+                "status": {
+                        "parameters": [],
+                        "utterances": [
+                                "what is the status of my order",
+                                " status",
+                                "what happened to my order"
+                        ],
+                        "response": {
+                                "type": "text",
+                                "value": "this should be status"
+                        }
+                }
+        },
+        "entities": {
+                "size": [
+                        "small",
+                        "medium",
+                        "large"
+                ],
+                "base": [
+                        "pan",
+                        "cheese burst",
+                        "thin"
+                ],
+                "toppings": [
+                        "onion",
+                        "mushrrom",
+                        "tomato"
+                ]
+        },
+        "microBots": {
+                "order": {
+                        "start": {
+                                "response":{
+                                        "type": "text",
+                                        "value": "Ok, would you like a breverage along with your order?"
+                                },
+                                "transitions":{
+                                        "yes": {
+                                                "nextState": "question1"
+                                        },
+                                        "no": {
+                                                "nextState": "db1"
+                                        },
+                                        "string": {
+                                                "reply": "I did not quite get that, do you want extra breverage?"
+                                        }
+                                }
+                        },
+                        "question1": {
+                                "response": {
+                                        "type": "text",
+                                        "value": "Sure, Which breverage do you want?"
+                                },
+                                "transitions":{
+                                        "string": {
+                                                "nextState": "db1",
+                                                "name": "breverage"
+                                        }
+                                }
+                        },
+                        "db1":{
+                                "response": {
+                                        "type": "text",
+                                        "value": "Your order has been recorded, here is a summary, size is @size, toppings are @toppings, base is @base, breverage as @breverage"
+                                }
+                        }
+                }
+        }
+}

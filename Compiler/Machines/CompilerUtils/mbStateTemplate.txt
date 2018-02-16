@@ -1,0 +1,17 @@
+#stateName: {
+        _onEnter: async function() {
+            for(param in data[this.uuid]["context"].result.parameters)
+            {
+                data[this.uuid]['store'][param] = data[this.uuid]["context"].result.parameters[param]
+            }
+            bots[this.uuid] = this;
+            #code
+        },
+        continue: async function(){
+            #code
+        },
+        back: function(intent, rootIntent){
+            this.handle(intent);
+        },
+        //transitions
+}

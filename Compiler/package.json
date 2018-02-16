@@ -1,0 +1,36 @@
+{
+  "name": "compiler",
+  "version": "1.0.0",
+  "description": "BotScript compiler",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/abhivijay96/botscript.git"
+  },
+  "keywords": [
+    "bot",
+    "compiler",
+    "dialogflow",
+    "botscript"
+  ],
+  "author": "ChatScript Inc.",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/abhivijay96/botscript/issues"
+  },
+  "homepage": "https://github.com/abhivijay96/botscript#readme",
+  "dependencies": {
+    "body-parser": "^1.18.2",
+    "express": "^4.16.2",
+    "js-beautify": "^1.7.5",
+    "machina": "^2.0.0",
+    "mongodb": "^3.0.2",
+    "ncp": "^2.0.0",
+    "semaphore": "^1.1.0"
+  },
+  "devDependencies": {}
+}

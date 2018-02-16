@@ -1,0 +1,62 @@
+var express = require('express')
+var bodyParser = require('body-parser')
+var RootDialog = require('./Machines/RootDialog');
+var bots = require('./bot')
+var semaphore = require('semaphore')
+var data = require('./data')
+
+var app = express()
+var semaphores = {}
+var jsonParser = bodyParser.json();
+
+app.get('/', (req, res) => {
+    res.send(JSON.stringify({value: 1}));
+})
+
+app.post('/', jsonParser, (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    let uuid = req.body.sessionId;
+    console.log("Session id is : " + uuid);
+
+    if(semaphores[uuid] == undefined)
+    {
+        console.log('Came here Added semaphore')
+        semaphores[uuid] = semaphore(1);
+    }
+
+    res.semaphore = semaphores[uuid];
+    res.uuid = uuid;
+    
+    if (bots[uuid] == undefined) {
+        bots[uuid] = new RootDialog({
+            uuid: uuid
+        });
+        data[uuid] = {'store': {}, 'microBots': {}}
+    }
+
+    data[uuid]['res'] = res;
+    
+    let intent = req.body.result.metadata.intentName;
+    data[uuid]['intent'] = intent;
+    data[uuid]['context'] = req.body;
+    
+    if(intent == 'Default Fallback Intent')
+        intent = 'string'
+
+    else if(intent.startsWith('continue'))
+    {
+        if(data[uuid]['microBots'][intent.split('-')[1]] != undefined)
+        {
+            bots[uuid] = data[uuid]['microBots'][intent.split('-')[1]];
+            intent = 'continue';
+        }
+    }
+
+    semaphores[uuid].take(function() {
+        bots[uuid].handle(intent);
+    });
+});
+
+app.listen(#PORT, () => {
+    console.log("Listening at #PORT");
+});
