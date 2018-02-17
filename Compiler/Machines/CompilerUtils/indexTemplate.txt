@@ -31,7 +31,7 @@ app.post('/', jsonParser, (req, res) => {
         bots[uuid] = new RootDialog({
             uuid: uuid
         });
-        data[uuid] = {'store': {}, 'microBots': {}}
+        data[uuid] = {'store': {}, 'microBots': {}, 'expectedIntents' : {}}
     }
 
     data[uuid]['res'] = res;

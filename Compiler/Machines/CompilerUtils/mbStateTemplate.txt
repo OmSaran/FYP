@@ -5,9 +5,10 @@
                 data[this.uuid]['store'][param] = data[this.uuid]["context"].result.parameters[param]
             }
             bots[this.uuid] = this;
+            //expected
             #code
         },
-        continue: async function(){
+        string: async function(){
             #code
         },
         back: function(intent, rootIntent){

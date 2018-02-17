@@ -29,10 +29,14 @@ function generator(microBots)
             newState = newState.replace('#code', code).replace('#code', code)
             //Generating transitions
             let transitions = botStates[state]['transitions'];
+            let entryCode = ''
+
             if(transitions != undefined)
             {
+                entryCode += Object.keys(transitions);
                 for(transition in transitions)
                 {
+                    // for this to be triggered, syntax tree should have name parameter which will be used to put it in the datastore.
                     transitionCode = transitions[transition]['name'] == undefined ? '' : 'data[this.uuid]["store"]["' + transitions[transition]['name'] + '"] = data[this.uuid]["context"].result.resolvedQuery;'
                     if(transitions[transition]['nextState'] != undefined)
                     {
@@ -47,8 +51,9 @@ function generator(microBots)
                     newState = newState.replace('//transitions', transition + ': function(){' + transitionCode + '},' + '\n//transitions')
                 }
             }
+
             newState = newState.replace('//transitions', '"*": function() {this.parent.handle("back", data[this.uuid]["intent"], this.rootIntent);}');
-        
+            newState = newState.replace('//expected', 'data[this.uuid]["expectedIntents"][this.rootIntent] = ["' + entryCode.replace(',', '","') + '"]')
             newDialog = newDialog.replace('//states', newState + ',\n//states');
         }
         dialogs[bot + "Bot"] = (beautify(newDialog));

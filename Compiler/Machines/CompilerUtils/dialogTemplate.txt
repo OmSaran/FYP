@@ -2,13 +2,15 @@ var machina = require('machina')
 var replier = require('../Utils/reply')
 var dbUtils = require('../databaseUtils')
 var data = require('../data')
-var bots = require('../bots')
+var bots = require('../bot')
 //require
 
 module.exports = machina.Fsm.extend({
 
     initialize: function (options) {
         this.uuid = options.uuid;
+        this.stack = [];
+        this.maxSize = 5;
     },
 
     initialState: 'startState',

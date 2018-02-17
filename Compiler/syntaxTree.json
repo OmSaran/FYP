@@ -9,8 +9,8 @@
                                 "I want to see the menu"
                         ],
                         "response": {
-                                "value": "This is a menu: 1.pizza",
-                                "type": "text"
+                                "value": "menu",
+                                "type": "mb"
                         }
                 },
                 "order": {
@@ -69,6 +69,11 @@
                         "onion",
                         "mushrrom",
                         "tomato"
+                ],
+                "drink": [
+                        "sprite",
+                        "coke",
+                        "fanta"
                 ]
         },
         "microBots": {
@@ -96,9 +101,8 @@
                                         "value": "Sure, Which breverage do you want?"
                                 },
                                 "transitions":{
-                                        "string": {
-                                                "nextState": "db1",
-                                                "name": "breverage"
+                                        "breverage": {
+                                                "nextState": "db1"
                                         }
                                 }
                         },
@@ -106,6 +110,31 @@
                                 "response": {
                                         "type": "text",
                                         "value": "Your order has been recorded, here is a summary, size is @size, toppings are @toppings, base is @base, breverage as @breverage"
+                                }
+                        }
+                },
+                "menu": {
+                        "start": {
+                                "response":{
+                                        "type": "text",
+                                        "value": "We have pizzas, toppings available are onion, mushroom, tomato. Would you like to see what breverages we have?"
+                                },
+                                "transitions":{
+                                        "yes": {
+                                                "nextState": "showDrinks"
+                                        },
+                                        "no": {
+                                                "reply": "Okay"
+                                        },
+                                        "string": {
+                                                "reply": "I did not quite get that, do you want extra breverage?"
+                                        }
+                                }
+                        },
+                        "showDrinks": {
+                                "response":{
+                                        "value": "Fanta, coke, sprite",
+                                        "type": "text"
                                 }
                         }
                 }
