@@ -21,9 +21,9 @@
             let intent = data[this.uuid]['intent'];
             let handled = false;
 
-            for(let i = len; i >= 0; ++i)
+            for(let i = len; i >= 0; --i)
             {
-                if(data[this.uuid]['expectedIntents'][this.stack[i]] && data[this.uuid]['expectedIntents'][this.stack[i]].indexOf(intent) > 0)
+                if(data[this.uuid]['expectedIntents'][this.stack[i]] && data[this.uuid]['expectedIntents'][this.stack[i]].indexOf(intent) >= 0)
                 {
                     handled = true;
                     data[this.uuid]['microBots'][this.stack[i]].handle(data[this.uuid]['intent']);

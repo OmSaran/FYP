@@ -127,7 +127,7 @@
                                                 "reply": "Okay"
                                         },
                                         "string": {
-                                                "reply": "I did not quite get that, do you want extra breverage?"
+                                                "reply": "I did not quite get that, would you like to see breverages menu?"
                                         }
                                 }
                         },
@@ -135,6 +135,22 @@
                                 "response":{
                                         "value": "Fanta, coke, sprite",
                                         "type": "text"
+                                }
+                        }
+                },
+                "drinks": {
+                        "start": {
+                                "response":{
+                                        "type": "text",
+                                        "value": "We have, Fanta, coke, sprite. Would you like to know anything else?"
+                                },
+                                "transitions":{
+                                        "yes": {
+                                                "nextState": "you can visit https://pizza.com/aboutus to find out more about us."
+                                        },
+                                        "string": {
+                                                "reply": "We have, Fanta, coke, sprite. Would you like to know anything else?"
+                                        }
                                 }
                         }
                 }
