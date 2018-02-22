@@ -1,5 +1,6 @@
 var machina = require('machina')
 var replier = require('../Utils/reply')
+var Logger = require('../Utils/logger')
 var dbUtils = require('../databaseUtils')
 var data = require('../data')
 var bots = require('../bot')
@@ -11,6 +12,7 @@ module.exports = machina.Fsm.extend({
         this.uuid = options.uuid;
         this.stack = [];
         this.maxSize = 5;
+        this.name = 'RootMachine';
     },
 
     initialState: 'startState',

@@ -3,6 +3,9 @@ var fs = require('fs');
 var ncp = require('ncp').ncp;
 var microBotGenerator = require('./microBotGenerator')
 var databaseCodeGen = require('./dataBaseCodeGen')
+var entities = require('../../entities');
+var intents = require('../../intents');
+var dialogFlow = require('../../DialogFlow');
 
 let stateTemplate = fs.readFileSync('./Machines/CompilerUtils/stateTemplate.txt', 'utf-8')
 let dialogTemplate = fs.readFileSync('./Machines/CompilerUtils/dialogTemplate.txt', 'utf-8')
@@ -72,12 +75,12 @@ function createStates(syntaxTree)
             // Add transitions here
             if(intents[j] != intents[i])
             {
-                newState = newState.replace('//transitions', intents[j] + ': function(){this.transition("' + intents[j] + 'State")},\n//transitions');
+                newState = newState.replace('//transitions', intents[j] + ': async function(){Logger.log(this.uuid, this.name + " got event : ' + intents[j] + '"); this.transition("' + intents[j] + 'State")},\n//transitions');
             }
 
             else
             {
-                newState = newState.replace('//transitions', intents[j] + ': async function(){' + code + '},\n//transitions');  
+                newState = newState.replace('//transitions', intents[j] + ': async function(){Logger.log(this.uuid, this.name + " got event : ' + intents[j] + '");' + code + '},\n//transitions');  
             }
         }
         states.push(newState);
@@ -133,6 +136,27 @@ function createBot(syntaxTree, user)
     const count = fs.readdirSync(dir).length;
     let botDir = dir + '/bot' + count;
     
+    for(subIntent in syntaxTree['subIntents'])
+    {
+        syntaxTree['intents'][subIntent] = syntaxTree['subIntents'][subIntent];
+    }
+
+// console.log(df.intents.useWebHook);
+    let df = dialogFlow(syntaxTree['token']);
+    df.entities.create(syntaxTree, function(error, results) {
+        if(error) {
+            return console.log("error in entity creation!");
+        }
+        console.log(results);
+        df.intents.useWebHook(() => {console.log('Done default')});
+        df.intents.create(syntaxTree, function(error, results) {        
+            if(error) {
+                return console.log (error + "\n\nError in intents creation \n\n");
+            }
+            console.log(results)
+        })
+    });
+
     fs.mkdirSync(botDir);
     ncp('./Template', botDir, (err) => {
         if(err){
@@ -142,7 +166,7 @@ function createBot(syntaxTree, user)
         {
             for(mb in microBots)
             {
-                fs.writeFileSync(botDir + '/Machines/' + mb + '.js', microBots[mb]);
+                fs.writeFileSync(botDir + '/Machines/' + mb + '.js', microBots[mb].replace('#machineName', mb + 'Bot'));
                 rootDialog = rootDialog.replace('//require', 'var ' + mb + ' = require("' + './' + mb + '");\n//require');
             }
                 

@@ -75,11 +75,11 @@ function generator(microBots)
                         transitionCode += 'replier(this.uuid, "' + transitions[transition]['reply'] + '");'
                     }
 
-                    newState = newState.replace('//transitions', transition + ': function(){' + transitionCode + '},' + '\n//transitions')
+                    newState = newState.replace('//transitions', transition + ': function(){Logger.log(this.uuid, this.name + " got event : ' + transition + '");' + transitionCode + '},' + '\n//transitions')
                 }
             }
 
-            newState = newState.replace('//transitions', '"*": function() {this.parent.handle("back", data[this.uuid]["intent"], this.rootIntent);}');
+            newState = newState.replace('//transitions', '"*": function() {Logger.log(this.uuid, this.name + " got event : * ");this.parent.handle("back", data[this.uuid]["intent"], this.rootIntent);}');
             newState = newState.replace('//expected', 'data[this.uuid]["expectedIntents"][this.rootIntent] = ["' + entryCode.replace(',', '","') + '"]')
             newDialog = newDialog.replace('//states', newState + ',\n//states');
         }

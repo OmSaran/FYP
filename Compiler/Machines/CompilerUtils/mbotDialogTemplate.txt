@@ -3,6 +3,7 @@ var replier = require('../Utils/reply')
 var dbUtils = require('../databaseUtils')
 var data = require('../data')
 var bots = require('../bot')
+var Logger = require('../Utils/logger')
 //require
 
 module.exports = machina.Fsm.extend({
@@ -11,6 +12,7 @@ module.exports = machina.Fsm.extend({
         this.uuid = options.uuid;
         this.parent = options.parent;
         this.rootIntent = options.rootIntent;
+        this.name = '#machineName';
     },
 
     initialState: 'startState',

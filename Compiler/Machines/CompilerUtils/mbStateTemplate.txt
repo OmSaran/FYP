@@ -9,6 +9,7 @@
             #code
         },
         string: async function(){
+            Logger.log(this.uuid, this.name + " got event : string");
             #code
         },
         back: function(intent, rootIntent){

@@ -1,4 +1,5 @@
 {
+        "token": "c5bac57145084a3c9a23189ca3ff4ec3",
         "intents": {
                 "menu": {
                         "parameters": [],
@@ -104,6 +105,25 @@
                         "fanta"
                 ]
         },
+        "subIntents": {
+                "yes": {
+                        "parameters": [],
+                        "utterances": [
+                                "yes",
+                                "ya",
+                                "yup",
+                                "yo"
+                        ]
+                },
+                "no":{
+                        "parameters": [],
+                        "utterances": [
+                                "nah",
+                                "no",
+                                "nope"
+                        ]
+                }   
+        },
         "microBots": {
                 "order": {
                         "start": {
@@ -171,22 +191,6 @@
                                 "response": {
                                         "value": "Fanta, coke, sprite",
                                         "type": "text"
-                                }
-                        }
-                },
-                "drinks": {
-                        "start": {
-                                "response": {
-                                        "type": "text",
-                                        "value": "We have, Fanta, coke, sprite. Would you like to know anything else?"
-                                },
-                                "transitions": {
-                                        "yes": {
-                                                "nextState": "you can visit https://pizza.com/aboutus to find out more about us."
-                                        },
-                                        "string": {
-                                                "reply": "We have, Fanta, coke, sprite. Would you like to know anything else?"
-                                        }
                                 }
                         }
                 }
