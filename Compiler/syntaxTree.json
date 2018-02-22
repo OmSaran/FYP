@@ -37,14 +37,8 @@
                                 "I want a @size pizza with @toppings"
                         ],
                         "response": {
-                                "table": "order",
-                                "type": "store",
-                                "value": "Your order has been recorded",
-                                "columns": [
-                                        "size",
-                                        "toppings",
-                                        "base"
-                                ]
+                                "type": "mb",
+                                "value": "order"
                         }
                 },
                 "status": {
@@ -55,8 +49,15 @@
                                 "what happened to my order"
                         ],
                         "response": {
-                                "type": "text",
-                                "value": "this should be status"
+                                "type": "get",
+                                "value": "Status of your order is @status",
+                                "columns": [
+                                        "status"
+                                ],
+                                "filter": [
+                                        "finished=no"
+                                ],
+                                "table": "orders"
                         }
                 },
                 "updateSize": {
@@ -77,7 +78,7 @@
                                 "columns": [
                                         "size"
                                 ],
-                                "table": "order"
+                                "table": "orders"
                         }
                 }
         },
@@ -135,8 +136,16 @@
                         },
                         "db1": {
                                 "response": {
-                                        "type": "text",
-                                        "value": "Your order has been recorded, here is a summary, size is @size, toppings are @toppings, base is @base, breverage as @breverage"
+                                        "type": "store",
+                                        "value": "Your order has been recorded!",
+                                        "columns": [
+                                                "size",
+                                                "toppings",
+                                                "base",
+                                                "status=not confirmed",
+                                                "finished=no"
+                                        ],
+                                        "table": "orders"
                                 }
                         }
                 },

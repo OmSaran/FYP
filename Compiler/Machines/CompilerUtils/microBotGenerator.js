@@ -2,6 +2,8 @@ var beautify = require('js-beautify').js_beautify;
 var fs = require('fs');
 let stateTemplate = fs.readFileSync('./Machines/CompilerUtils/mbStateTemplate.txt', 'utf-8')
 let dialogTemplate = fs.readFileSync('./Machines/CompilerUtils/mbotDialogTemplate.txt', 'utf-8')
+var databaseCodeGen = require('./dataBaseCodeGen')
+let updateTemplate = fs.readFileSync('./Machines/CompilerUtils/mbUpdateCode.txt', 'utf-8')
 
 function generator(microBots)
 {
@@ -17,6 +19,7 @@ function generator(microBots)
             // add option for response as template
             let code;
             let response = botStates[state]['response'];
+            let transitionCode = undefined;
 
             if(response['type'] == 'text')
                 code = 'replier(this.uuid, "' + response['value'] + '");'
@@ -31,9 +34,26 @@ function generator(microBots)
             else
             {
                 // This is a databse operation, pass response to databseCodeGen to get code for that.
+                if(response['type'] == 'get')
+                {
+                    code = databaseCodeGen.getRetrieveCode(response); 
+                }
+
+                else if(response['type'] == 'store')
+                {
+                    code = databaseCodeGen.getStoreCode(response);
+                    code += '\nreplier(this.uuid, "' + response['value'] + '");';
+                }
+
+                else if(response['type'] == 'update')
+                {
+                    code = databaseCodeGen.getUpdateCode(response);
+                    transitionCode = databaseCodeGen.getTransitionCode(response, updateTemplate);
+                }
             }
 
-            newState = newState.replace('#code', code).replace('#code', code)
+            newState = newState.replace('#code', code).replace('#code', transitionCode == undefined ? code : transitionCode);
+            
             //Generating transitions
             let transitions = botStates[state]['transitions'];
             let entryCode = ''
