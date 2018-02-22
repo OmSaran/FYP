@@ -37,8 +37,14 @@
                                 "I want a @size pizza with @toppings"
                         ],
                         "response": {
-                                "value": "order",
-                                "type": "mb"
+                                "table": "order",
+                                "type": "store",
+                                "value": "Your order has been recorded",
+                                "columns": [
+                                        "size",
+                                        "toppings",
+                                        "base"
+                                ]
                         }
                 },
                 "status": {
@@ -51,6 +57,27 @@
                         "response": {
                                 "type": "text",
                                 "value": "this should be status"
+                        }
+                },
+                "updateSize": {
+                        "parameters": [
+                                {
+                                        "name": "size",
+                                        "type": "@size",
+                                        "isList": false
+                                }
+                        ],
+                        "utterances": [
+                                "Change the pizza's size",
+                                "I want to change the size",
+                                "change size to @size"
+                        ],
+                        "response": {
+                                "type": "update",
+                                "columns": [
+                                        "size"
+                                ],
+                                "table": "order"
                         }
                 }
         },
@@ -79,11 +106,11 @@
         "microBots": {
                 "order": {
                         "start": {
-                                "response":{
+                                "response": {
                                         "type": "text",
                                         "value": "Ok, would you like a breverage along with your order?"
                                 },
-                                "transitions":{
+                                "transitions": {
                                         "yes": {
                                                 "nextState": "question1"
                                         },
@@ -100,13 +127,13 @@
                                         "type": "text",
                                         "value": "Sure, Which breverage do you want?"
                                 },
-                                "transitions":{
+                                "transitions": {
                                         "breverage": {
                                                 "nextState": "db1"
                                         }
                                 }
                         },
-                        "db1":{
+                        "db1": {
                                 "response": {
                                         "type": "text",
                                         "value": "Your order has been recorded, here is a summary, size is @size, toppings are @toppings, base is @base, breverage as @breverage"
@@ -115,11 +142,11 @@
                 },
                 "menu": {
                         "start": {
-                                "response":{
+                                "response": {
                                         "type": "text",
                                         "value": "We have pizzas, toppings available are onion, mushroom, tomato. Would you like to see what breverages we have?"
                                 },
-                                "transitions":{
+                                "transitions": {
                                         "yes": {
                                                 "nextState": "showDrinks"
                                         },
@@ -132,7 +159,7 @@
                                 }
                         },
                         "showDrinks": {
-                                "response":{
+                                "response": {
                                         "value": "Fanta, coke, sprite",
                                         "type": "text"
                                 }
@@ -140,11 +167,11 @@
                 },
                 "drinks": {
                         "start": {
-                                "response":{
+                                "response": {
                                         "type": "text",
                                         "value": "We have, Fanta, coke, sprite. Would you like to know anything else?"
                                 },
-                                "transitions":{
+                                "transitions": {
                                         "yes": {
                                                 "nextState": "you can visit https://pizza.com/aboutus to find out more about us."
                                         },

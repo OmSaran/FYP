@@ -21,9 +21,16 @@ function generator(microBots)
             if(response['type'] == 'text')
                 code = 'replier(this.uuid, "' + response['value'] + '");'
             
+            else if(response['type'] == 'mb')
+            {
+                let botName = reponse['value'] + 'Bot';
+                code = 'bots[this.uuid] = new ' + botName + '({uuid: this.uuid, parent: this, rootIntent: this.rootIntent})';
+                newDialog = newDialog.replace('//require', 'var ' + botName + '= require("./' + botName + '");\n//require');
+            }
+
             else
             {
-                // implement microbot type of response here
+                // This is a databse operation, pass response to databseCodeGen to get code for that.
             }
 
             newState = newState.replace('#code', code).replace('#code', code)

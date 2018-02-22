@@ -3,6 +3,7 @@ var replier = require('../Utils/reply')
 var dbUtils = require('../databaseUtils')
 var data = require('../data')
 var bots = require('../bot')
+//require
 
 module.exports = machina.Fsm.extend({
 

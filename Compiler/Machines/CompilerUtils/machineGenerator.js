@@ -2,43 +2,14 @@ var beautify = require('js-beautify').js_beautify;
 var fs = require('fs');
 var ncp = require('ncp').ncp;
 var microBotGenerator = require('./microBotGenerator')
+var databaseCodeGen = require('./dataBaseCodeGen')
 
 let stateTemplate = fs.readFileSync('./Machines/CompilerUtils/stateTemplate.txt', 'utf-8')
 let dialogTemplate = fs.readFileSync('./Machines/CompilerUtils/dialogTemplate.txt', 'utf-8')
 let indexTemplate = fs.readFileSync('./Machines/CompilerUtils/indexTemplate.txt', 'utf-8')
+let updateTemplate = fs.readFileSync('./Machines/CompilerUtils/updateCode.txt', 'utf-8')
 
 let port = 5000;
-
-function generateJson(arr)
-{
-    let json = '{';
-    for(let i = 0; i < arr.length; ++i)
-    {
-        if(arr[i] != 'user')
-            json = json + '"' + arr[i] + '": "" + data[this.uuid]["context"].result.parameters["' + arr[i] + '"],'; 
-
-        else
-            json = json + '"' + arr[i] + '": "" + data[this.uuid]["context"].sessionId,';
-    }
-    json = json.substr(0, json.length - 1) + '}';
-    return json;
-}
-
-function getStoreCode(response)
-{
-    let columns = response['columns'];
-    let json = generateJson(columns);
-    json = json.replace('}', ', "user": data[this.uuid]["context"].sessionId}');
-    return 'await dbUtils.addValues("' + response['table'] + '",' + json + ' );';
-}
-
-function getRetrieveCode(response)
-{
-    let filters = Object.keys(response['filter']);
-    let json = generateJson(filters);
-    let code = 'let rows = await dbUtils.getColumns("' + response['table'] + '", ' + json + ', ' + '["' + response['columns'] + '"]); let template = "' + response['value'] + '"; let reply = ""; for(let i = 0; i < rows.length; ++i){ let temp = template; let row = rows[i]; let keys = Object.keys(row); for(let j = 0; j < keys.length; ++j){temp = temp.replace("@"+keys[j], row[keys[j]])} reply += temp;}\n replier(this.uuid, reply);';
-    return code;
-}
 
 function getStateEntryCode(response, intent)
 {
@@ -49,7 +20,7 @@ function getStateEntryCode(response, intent)
     {
         //Default table being used, need to change this, ask table name from the user in responseFlowMachine
         // context.result.parameters
-        let code = getStoreCode(response) + '\nreplier(this.uuid, "' + response['value'] + '");';  
+        let code = databaseCodeGen.getStoreCode(response) + '\nreplier(this.uuid, "' + response['value'] + '");';  
         return code;
     }
 
@@ -58,9 +29,19 @@ function getStateEntryCode(response, intent)
         return 'bots[this.uuid] = new ' + response['value'] + 'Bot({uuid: this.uuid, parent: this, rootIntent:"' + intent + '"});'
     }
 
+    else if(response['type'] == 'get')
+    {
+        return databaseCodeGen.getRetrieveCode(response);
+    }
+
+    else if(response['type'] == 'update')
+    {
+        return databaseCodeGen.getUpdateCode(response);
+    }
+
     else
     {
-        return getRetrieveCode(response);
+        //DELETE operation
     }
 }
 
@@ -74,7 +55,15 @@ function createStates(syntaxTree)
         let newState = stateTemplate.replace('#stateName', intents[i] + "State");
 
         // CODE generation part
-        let code = getStateEntryCode(syntaxTree["intents"][intents[i]]["response"], intents[i]);
+        let response = syntaxTree["intents"][intents[i]]["response"];
+        let code = getStateEntryCode(response, intents[i]);
+        
+        if(response['type'] == 'update' || response['type'] == 'delete')
+        {
+            // replace newState's transition with this transition code
+            newState = newState.replace('//transitions', databaseCodeGen.getTransitionCode(response, updateTemplate + ',\n//transitions'));
+        }
+
         newState = newState.replace("#code", code);
         
         // create states here
