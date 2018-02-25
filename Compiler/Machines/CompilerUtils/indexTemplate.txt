@@ -52,6 +52,11 @@ app.post('/', jsonParser, (req, res) => {
         }
     }
 
+    for(param in data[uuid]["context"].result.parameters)
+    {
+        data[uuid]['store'][param] = data[uuid]["context"].result.parameters[param]
+    }
+
     semaphores[uuid].take(function() {
         bots[uuid].handle(intent);
     });

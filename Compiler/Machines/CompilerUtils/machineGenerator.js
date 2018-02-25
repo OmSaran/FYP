@@ -142,20 +142,20 @@ function createBot(syntaxTree, user)
     }
 
 // console.log(df.intents.useWebHook);
-    let df = dialogFlow(syntaxTree['token']);
-    df.entities.create(syntaxTree, function(error, results) {
-        if(error) {
-            return console.log("error in entity creation!");
-        }
-        console.log(results);
-        df.intents.useWebHook(() => {console.log('Done default')});
-        df.intents.create(syntaxTree, function(error, results) {        
-            if(error) {
-                return console.log (error + "\n\nError in intents creation \n\n");
-            }
-            console.log(results)
-        })
-    });
+    // let df = dialogFlow(syntaxTree['token']);
+    // df.entities.create(syntaxTree, function(error, results) {
+    //     if(error) {
+    //         return console.log("error in entity creation!");
+    //     }
+    //     console.log(results);
+    //     df.intents.useWebHook(() => {console.log('Done default')});
+    //     df.intents.create(syntaxTree, function(error, results) {        
+    //         if(error) {
+    //             return console.log (error + "\n\nError in intents creation \n\n");
+    //         }
+    //         console.log(results)
+    //     })
+    // });
 
     fs.mkdirSync(botDir);
     ncp('./Template', botDir, (err) => {

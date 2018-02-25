@@ -8,7 +8,7 @@ module.exports = {
             else
                 json = json + '"' + defaultKeyVal[0] + '": "" + "' + defaultKeyVal[1] + '",';
         }
-        json = json.substr(0, json.length - 1) + '}';
+        json = json.substr(0, json.length > 1 ? json.length - 1 : 1) + '}';
         json = json.replace('}', ', "user": this.uuid}');
         return json;
     },
@@ -32,7 +32,12 @@ module.exports = {
 
     getRetrieveCode: function (response) {
         let json = this.generateJson(response['filter']);
-        let code = 'let rows = await dbUtils.getColumns("' + response['table'] + '", ' + json + ', ' + '["' + response['columns'] + '"]); let template = "' + response['value'] + '"; let reply = ""; for(let i = 0; i < rows.length; ++i){ let temp = template; let row = rows[i]; let keys = Object.keys(row); for(let j = 0; j < keys.length; ++j){temp = temp.replace("@"+keys[j], row[keys[j]])} reply += temp;}\n replier(this.uuid, reply);';
+        let required = ' ';
+        response['columns'].map((column) => {
+            required += '"' + column + '",'
+        });
+        required = required.substr(0, required.length > 1 ? required.length - 1 : 1);
+        let code = 'let rows = await dbUtils.getColumns("' + response['table'] + '", ' + json + ', ' + '[' + required + ']); let template = "' + response['value'] + '"; let reply = ""; for(let i = 0; i < rows.length; ++i){ let temp = template; let row = rows[i]; let keys = Object.keys(row); for(let j = 0; j < keys.length; ++j){temp = temp.replace("@"+keys[j], row[keys[j]])} reply += temp;}\n replier(this.uuid, reply);';
         return code;
     }
 }

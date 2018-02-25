@@ -1,6 +1,7 @@
 var express = require('express')
 var bodyParser = require('body-parser')
 var dialogFlow = require('./Machines/dialogFlowMachine');
+var responseFlow = require('./Machines/responseFlowMachine');
 var bots = require('./bot')
 var semaphore = require('semaphore')
 
@@ -11,6 +12,10 @@ var jsonParser = bodyParser.json();
 app.get('/', (req, res) => {
     res.send(JSON.stringify({value: 1}));
 })
+
+var fs = require("fs")
+var json = fs.readFileSync("syntaxTree.json", "utf-8");
+var syntaxTree = JSON.parse(json)
 
 app.post('/', jsonParser, (req, res) => {
     res.setHeader('Content-Type', 'application/json');
@@ -28,7 +33,9 @@ app.post('/', jsonParser, (req, res) => {
         semaphores[uuid].take(function(){
             bots[uuid] = new dialogFlow({
                 res: res,
-                context: req.body
+                context: req.body,
+                intents: syntaxTree['intents'],
+                entities: syntaxTree['entities']
             });
         })
     }

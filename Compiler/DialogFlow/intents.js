@@ -23,6 +23,16 @@ function sendRequest(options, callback) {
     })
 }
 
+function addParameters(body, parameters)
+{
+    body['responses'] = []
+    let defaultAction = {"action": "default", "parameters": []}
+    parameters.map((parameter) => {
+        defaultAction['parameters'].push({"dataType": parameter['type'], "isList": parameter['isList'], "required": true, "value": '$'+parameter['name'], "name": parameter['name']})
+    })
+    body['responses'].push(defaultAction);
+}
+
 intents = function(devToken) {
     var obj = {}
     obj.devToken = devToken;
@@ -36,12 +46,13 @@ intents = function(devToken) {
         var optionsArr = [];
     
         for(key in ints) {
-            var templates = getTemplates(ints[key].utterances, ints[key].parameters) 
-    
+            var templates = getTemplates(ints[key].utterances, ints[key].parameters); 
             var body = {};
+            addParameters(body, ints[key].parameters);
             body.name = key;
             body.templates = templates;
             body.webhookUsed = true;
+            body.auto = true;
             var options = {
                 headers: {
                     'Authorization': 'Bearer ' + this.devToken,
