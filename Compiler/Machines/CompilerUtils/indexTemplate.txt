@@ -4,6 +4,16 @@ var RootDialog = require('./Machines/RootDialog');
 var bots = require('./bot')
 var semaphore = require('semaphore')
 var data = require('./data')
+var urls = ngrok.connect(PORT);
+urls.then(function(url) {
+    URL = url;
+    app.listen(#PORT, () => {
+        console.log("Listening at " + #PORT);
+        console.log(URL);
+    })
+}, function(err) { 
+    console.log(err);
+});
 
 var app = express()
 var semaphores = {}
@@ -60,8 +70,4 @@ app.post('/', jsonParser, (req, res) => {
     semaphores[uuid].take(function() {
         bots[uuid].handle(intent);
     });
-});
-
-app.listen(#PORT, () => {
-    console.log("Listening at #PORT");
 });

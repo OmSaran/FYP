@@ -12,7 +12,7 @@ let dialogTemplate = fs.readFileSync('./Machines/CompilerUtils/dialogTemplate.tx
 let indexTemplate = fs.readFileSync('./Machines/CompilerUtils/indexTemplate.txt', 'utf-8')
 let updateTemplate = fs.readFileSync('./Machines/CompilerUtils/updateCode.txt', 'utf-8')
 
-let port = 5000;
+let port = 5001;
 
 function getStateEntryCode(response, intent)
 {
@@ -128,7 +128,8 @@ function createBot(syntaxTree, user)
     let microBots = microBotGenerator(syntaxTree['microBots']);
 
     let dir = './OutputBots/' + user;
-    indexFile = indexFile.replace('#PORT', port++).replace('#PORT', port);
+    indexFile = indexFile.replace('#PORT', port).replace('#PORT', port);
+    port++
 
     if(!fs.existsSync(dir))
         fs.mkdirSync(dir);
@@ -140,22 +141,21 @@ function createBot(syntaxTree, user)
     {
         syntaxTree['intents'][subIntent] = syntaxTree['subIntents'][subIntent];
     }
-
-// console.log(df.intents.useWebHook);
-    // let df = dialogFlow(syntaxTree['token']);
-    // df.entities.create(syntaxTree, function(error, results) {
-    //     if(error) {
-    //         return console.log("error in entity creation!");
-    //     }
-    //     console.log(results);
-    //     df.intents.useWebHook(() => {console.log('Done default')});
-    //     df.intents.create(syntaxTree, function(error, results) {        
-    //         if(error) {
-    //             return console.log (error + "\n\nError in intents creation \n\n");
-    //         }
-    //         console.log(results)
-    //     })
-    // });
+    
+    let df = dialogFlow(syntaxTree['token']);
+    df.entities.create(syntaxTree, function(error, results) {
+        if(error) {
+            return console.log("error in entity creation!");
+        }
+        console.log(results);
+        df.intents.useWebHook(() => {console.log('Done default')});
+        df.intents.create(syntaxTree, function(error, results) {        
+            if(error) {
+                return console.log (error + "\n\nError in intents creation \n\n");
+            }
+            console.log(results)
+        })
+    });
 
     fs.mkdirSync(botDir);
     ncp('./Template', botDir, (err) => {
