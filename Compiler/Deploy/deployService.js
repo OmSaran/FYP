@@ -97,6 +97,7 @@ app.post('/deploy', function(req, res) {
       let botDir = dir + '/bot' + botCount;
       fs.mkdirSync(botDir);
 
+      console.log('MADE DIRECTORY!! ' + botDir);
       ncp('../Template', botDir, (err) => {
         if(err){
             console.log('ERROR' + err);
