@@ -32,6 +32,7 @@ var json = fs.readFileSync("syntaxTree.json", "utf-8");
 var syntaxTree = JSON.parse(json)
 
 app.post('/', jsonParser, (req, res) => {
+    console.log(JSON.stringify(req.body));
     res.setHeader('Content-Type', 'application/json');
     let uuid = req.body.sessionId;
 
