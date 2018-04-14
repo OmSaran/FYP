@@ -1,9 +1,23 @@
+PORT = 3000
+URL =''
+
 var express = require('express')
 var bodyParser = require('body-parser')
 var dialogFlow = require('./Machines/dialogFlowMachine');
 var responseFlow = require('./Machines/responseFlowMachine');
 var bots = require('./bot')
 var semaphore = require('semaphore')
+const ngrok = require('ngrok');
+var urls = ngrok.connect(PORT);
+urls.then(function(url) {
+    URL = url;
+    app.listen(PORT, () => {
+        console.log("Listening at " + PORT);
+        console.log(URL);
+    })
+}, function(err) { 
+    console.log(err);
+})
 
 var app = express()
 var semaphores = {}
@@ -18,6 +32,7 @@ var json = fs.readFileSync("syntaxTree.json", "utf-8");
 var syntaxTree = JSON.parse(json)
 
 app.post('/', jsonParser, (req, res) => {
+    console.log(JSON.stringify(req.body));
     res.setHeader('Content-Type', 'application/json');
     let uuid = req.body.sessionId;
 
@@ -57,7 +72,3 @@ app.post('/', jsonParser, (req, res) => {
     }
     
 });
-
-app.listen(3000, () => {
-    console.log("Listening at 3000");
-})
