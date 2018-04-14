@@ -123,7 +123,7 @@ function getIndexFile(intents)
     return indexFile;
 }
 
-function createBot(syntaxTree, user)
+function createBot(syntaxTree, user, cb)
 {
     let rootDialog = beautify(getDialog(syntaxTree));
     let indexFile = beautify(getIndexFile(Object.keys(syntaxTree["intents"])));
@@ -131,9 +131,14 @@ function createBot(syntaxTree, user)
 
     // let dir = './OutputBots/' + user;
     var port;
-    var deployURL = 'localhost:27015'
-    needle.post(deployURL + '/deploy/port', {}, function(res, err) {
+    var deployURL = 'http://localhost:27015'
+    needle.post(deployURL + '/deploy/port', {'user': user }, function(err, res) {
+        if (err) {
+            console.log('ERROR!!');
+            return console.log(err.body);
+        }
         port = res.body.port;
+        botCount = res.body.botCount;
         indexFile = indexFile.replace('#PORT', port).replace('#PORT', port);
         for(subIntent in syntaxTree['subIntents'])
         {
@@ -145,13 +150,11 @@ function createBot(syntaxTree, user)
             if(error) {
                 return console.log("error in entity creation!");
             }
-            console.log(results);
             df.intents.useWebHook(() => {console.log('Done default')});
             df.intents.create(syntaxTree, function(error, results) {        
                 if(error) {
                     return console.log (error + "\n\nError in intents creation \n\n");
                 }
-                console.log(results)
             })
         });
 
@@ -161,9 +164,18 @@ function createBot(syntaxTree, user)
             mBots.push(microBots[mb].replace('#machineName', mb + 'Bot'));
             rootDialog = rootDialog.replace('//require', 'var ' + mb + ' = require("' + './' + mb + '");\n//require');
         }
-
-        return deployBot(user, )
-
+        console.log(mBots);
+        obj = {
+            'user': user,
+            'botCount': botCount,
+            'port': port,
+            'indexFile': indexFile,
+            'rootDialog': rootDialog,
+            'mBots': mBots
+        }
+        needle.post(deployURL + '/deploy/', obj, function(res, err) {
+            cb(port);
+        })
     })
 
     // if(!fs.existsSync(dir))
@@ -200,8 +212,6 @@ function createBot(syntaxTree, user)
     //         console.log('DONE');
     //     }
     // });
-
-    return deployBot(user, count)
 }
 
 function deployBot(userId, count) {

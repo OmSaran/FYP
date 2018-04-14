@@ -1,14 +1,17 @@
+PORT = #PORT
+
 var express = require('express')
 var bodyParser = require('body-parser')
 var RootDialog = require('./Machines/RootDialog');
 var bots = require('./bot')
 var semaphore = require('semaphore')
-var data = require('./data')
+var data = require('./data');
+var ngrok = require('ngrok');
 var urls = ngrok.connect(PORT);
 urls.then(function(url) {
     URL = url;
-    app.listen(#PORT, () => {
-        console.log("Listening at " + #PORT);
+    app.listen(PORT, () => {
+        console.log("Listening at " + PORT);
         console.log(URL);
     })
 }, function(err) { 

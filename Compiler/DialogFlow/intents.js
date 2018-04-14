@@ -122,6 +122,9 @@ intents = function(devToken) {
         }
         var self = this;
         function apiCall(defIntent) {
+            if(!defIntent) {
+                return;
+            }
             defIntent.webhookUsed = true;
             var options = {
                 headers: {
