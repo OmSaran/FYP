@@ -198,7 +198,7 @@ module.exports = machina.Fsm.extend({
                 console.log(JSON.stringify(syntaxTree));
                 self = this;
                 machineGenerator(syntaxTree, this.context.sessionId, function(port) {
-                    replier(self.res, "Generating your bot..... " + port);
+                    replier(self.res, "Generating your bot..... " + 'http://52.226.73.198:' + port);
                 });                
             },
 
