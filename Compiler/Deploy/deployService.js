@@ -84,8 +84,7 @@ app.post('/deploy', function(req, res) {
         'message': 'Failed',
       }).status(500);
     }
-    function deployAndStartService() {      
-      //: TODO
+    function deployAndStartService() {
       console.log('deployAndStartService');
       var outputBotBasePath = '../OutputBots/'
       let dir = '../OutputBots/' + user;
@@ -116,7 +115,13 @@ app.post('/deploy', function(req, res) {
 
         var sep = '/'
         var outputBotPath = outputBotBasePath + user + sep + 'bot' + botCount + sep; 
-        shell.exec('nohup node ' + outputBotPath + 'index.js &')
+        shell.exec('nohup node ' + outputBotPath + 'index.js &');
+        
+        res.send({
+          'message': 'Success',
+          'port': port
+        });
+
       });
     }
     deployAndStartService()
