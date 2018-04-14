@@ -174,44 +174,11 @@ function createBot(syntaxTree, user, cb)
             'mBots': mBots
         }
         needle.post(deployURL + '/deploy/', obj, function(res, err) {
+            console.log('HOSTED!');
+            console.log(port);
             cb(port);
         })
     })
-
-    // if(!fs.existsSync(dir))
-        // fs.mkdirSync(dir);
-    
-    // const count = fs.readdirSync(dir).length;
-    // let botDir = dir + '/bot' + count;
-    
-    
-    
-    
-
-
-    
-
-
-
-    // fs.mkdirSync(botDir);
-    // ncp('./Template', botDir, (err) => {
-    //     if(err){
-    //         console.log('ERROR' + err);
-    //     }
-    //     else
-    //     {
-    //         for(mb in microBots)
-    //         {
-    //             fs.writeFileSync(botDir + '/Machines/' + mb + '.js', microBots[mb].replace('#machineName', mb + 'Bot'));
-    //             rootDialog = rootDialog.replace('//require', 'var ' + mb + ' = require("' + './' + mb + '");\n//require');
-    //         }
-                
-    //         fs.writeFileSync(botDir + '/index.js', indexFile, 'utf-8');
-    //         fs.writeFileSync(botDir + '/Machines/RootDialog.js', rootDialog, 'utf-8');
-            
-    //         console.log('DONE');
-    //     }
-    // });
 }
 
 function deployBot(userId, count) {

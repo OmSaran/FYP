@@ -8,6 +8,7 @@ var bodyParser = require('body-parser')
 var shell = require('shelljs');
 var requestValidator = require('../Utils/reqValidator.js');
 var fs = require('fs');
+const { exec } = require('child_process');
 var ncp = require('ncp');
 
 const getPort = require('get-port');
@@ -115,7 +116,14 @@ app.post('/deploy', function(req, res) {
 
         var sep = '/'
         var outputBotPath = outputBotBasePath + user + sep + 'bot' + botCount + sep; 
-        shell.exec('nohup node ' + outputBotPath + 'index.js &');
+        console.log('BEFORE');
+        // shell.exec('./deploy.sh ' + outputBotPath + 'index.js &');
+        exec('./deploy.sh ' + outputBotPath + 'index.js &', (err, stdout, stderr) => {
+          console.log(stdout);
+          console.log(err);
+          console.log(stderr);
+        });
+        console.log('AFTER');
         
         res.send({
           'message': 'Success',
