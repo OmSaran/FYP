@@ -1,7 +1,7 @@
 const MongoClient = require('mongodb').MongoClient;
 const assert = require('assert');
-const url = "mongodb://localhost:27017/";
-const dbName = "FYP";
+const url = "mongodb://code:c0deMa$ter@52.226.73.198:6599/admin";
+const dbName = "#user";
 var semaphore = require('semaphore')
 var semaphores = {}
 

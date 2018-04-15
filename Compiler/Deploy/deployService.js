@@ -63,7 +63,7 @@ app.post('/deploy/port', function(req, res) {
 app.post('/deploy', function(req, res) {
   console.log(req.body.user);
   if(!requestValidator.validateParams(req.body, ['user', 'botCount', 'port', 
-  'indexFile', 'rootDialog']) ) {
+  'indexFile', 'rootDialog', 'databaseUtils']) ) {
     console.log('Bad request!');
     return res.json({
       'message': 'Invalid Input'
@@ -73,6 +73,7 @@ app.post('/deploy', function(req, res) {
   var botCount = req.body.count;
   var port = req.body.port;
   var indexFile = req.body.indexFile;
+  var databaseUtils = req.body.databaseUtils;
   var rootDialog = req.body.rootDialog;
   var mBots = req.body.mBots;
   var botCount = req.body.botCount;
@@ -110,6 +111,7 @@ app.post('/deploy', function(req, res) {
             }
                 
             fs.writeFileSync(botDir + '/index.js', indexFile, 'utf-8');
+            fs.writeFileSync(botDir + '/databaseUtils.js', databaseUtils, 'utf-8');
             fs.writeFileSync(botDir + '/Machines/RootDialog.js', rootDialog, 'utf-8');
             
             console.log('DONE');
