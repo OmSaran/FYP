@@ -132,7 +132,7 @@ app.post('/deploy', function(req, res) {
         });
         console.log('AFTER');
 
-        db.addValues('portMappings', { 'port': 65535 }).then(
+        db.addValues('portMappings', { 'port': port }).then(
           function() {
             res.send({
               'message': 'Success',
