@@ -10,7 +10,7 @@ var requestValidator = require('../Utils/reqValidator.js');
 var fs = require('fs');
 const { exec } = require('child_process');
 var ncp = require('ncp');
-var db = require('./databseUtils.js');
+var db = require('../databseUtils.js');
 var _ = require('underscore');
 db.setDBName('deployservice');
 
