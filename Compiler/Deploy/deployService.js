@@ -10,6 +10,9 @@ var requestValidator = require('../Utils/reqValidator.js');
 var fs = require('fs');
 const { exec } = require('child_process');
 var ncp = require('ncp');
+var db = require('./databseUtils.js');
+var _ = require('underscore');
+db.setDBName('deployservice');
 
 const getPort = require('get-port');
 
@@ -46,6 +49,7 @@ app.post('/deploy/port', function(req, res) {
   
   while(lock != 0) {}
   lock = 1;
+  
   getUnregisteredPort(user, botCount, function(port, err) {
     if(err) {
       res.json({
@@ -127,12 +131,21 @@ app.post('/deploy', function(req, res) {
           console.log(stderr);
         });
         console.log('AFTER');
-        
-        res.send({
-          'message': 'Success',
-          'port': port
-        });
 
+        db.addValues('portMappings', { 'port': 65535 }).then(
+          function() {
+            res.send({
+              'message': 'Success',
+              'port': port
+            });
+          },
+          function(err) {
+            res.send({
+              'message': 'Error',
+              'error': err              
+            }).status(500);
+          }
+        )
       });
     }
     deployAndStartService()
@@ -163,41 +176,51 @@ function registerAppMapping(user, count, port, cb) {
 }
 
 function getUnregisteredPort(user, count, cb) {
-  console.log('**************')
-  console.log(user);
-  console.log(count);
-  console.log('**************')
-  getPort().then(function(port) {
-    if(portMappings[port]) {
-      now = (new Date).getTime();
-      diff = now - portMappings[port]['timestamp']
-
-      // If port has been unused for more than 60 seconds then remove the port registration
-      if(diff > 75000 && !portMappings.used) {
-        portMappings[port].user = user;
-        portMappings[port].botCount = count;
-        portMappings[port].timestamp = now;
-        portMappings[port].used = false;
+  var registeredPorts = [];
+  // Can be improved to do database call only once.
+  db.getColumns('portMappings', {}, ['port']).then(
+      function(data) {
+        registeredPorts = _.pluck(data, 'port');
+        getPort().then(function(port) {
+          if(_.contains(data, port)) {
+            getUnregisteredPort(cb);
+          }
+          if(portMappings[port]) {
+            now = (new Date).getTime();
+            diff = now - portMappings[port]['timestamp']
+      
+            // If port has been unused for more than 60 seconds then remove the port registration
+            if(diff > 75000 && !portMappings.used) {
+              portMappings[port].user = user;
+              portMappings[port].botCount = count;
+              portMappings[port].timestamp = now;
+              portMappings[port].used = false;
+              lock = 0;
+              cb(port)
+            }
+            else {
+              getUnregisteredPort(cb);
+            }
+          }
+          else {
+            portMappings[port] = {
+              "user": user,
+              "botCount": count,
+              "used": false,
+              "timestamp": (new Date).getTime()
+            }
+            lock=0;
+            cb(port);
+          }
+        }, function(err) {
+          cb(null, err);
+        })
+      },
+      function(err) {
+        console.log('ERROR ' + err);
         lock = 0;
-        cb(port)
       }
-      else {
-        getUnregisteredPort(cb);
-      }
-    }
-    else {
-      portMappings[port] = {
-        "user": user,
-        "botCount": count,
-        "used": false,
-        "timestamp": (new Date).getTime()
-      }
-      lock=0;
-      cb(port);
-    }
-  }, function(err) {
-    cb(null, err);
-  })
+  )  
 }
 
 app.listen(PORT, function() { console.log('Successfully hosted') });
