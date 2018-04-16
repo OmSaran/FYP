@@ -13,6 +13,7 @@ let stateTemplate = fs.readFileSync('./Machines/CompilerUtils/stateTemplate.txt'
 let dialogTemplate = fs.readFileSync('./Machines/CompilerUtils/dialogTemplate.txt', 'utf-8')
 let indexTemplate = fs.readFileSync('./Machines/CompilerUtils/indexTemplate.txt', 'utf-8')
 let updateTemplate = fs.readFileSync('./Machines/CompilerUtils/updateCode.txt', 'utf-8')
+let databaseUtilsTemplate = fs.readFileSync('./Machines/CompilerUtils/databaseUtils.txt', 'utf-8');
 
 function getStateEntryCode(response, intent, botCount)
 {
@@ -34,12 +35,12 @@ function getStateEntryCode(response, intent, botCount)
 
     else if(response['type'] == 'get')
     {
-        return databaseCodeGen.getRetrieveCode(response, user, botCount);
+        return databaseCodeGen.getRetrieveCode(response, botCount);
     }
 
     else if(response['type'] == 'update')
     {
-        return databaseCodeGen.getUpdateCode(response, user, botCount);
+        return databaseCodeGen.getUpdateCode(response, botCount);
     }
 
     else
@@ -91,7 +92,7 @@ function createStates(syntaxTree, botCount)
 function getDialog(syntaxTree, botCount)
 {
     let intents = Object.keys(syntaxTree["intents"])
-    let states = createStates(syntaxTree);
+    let states = createStates(syntaxTree, botCount);
     let dialog = dialogTemplate;
 
     for(let i in states)
@@ -134,14 +135,14 @@ function createBot(syntaxTree, user, cb)
         
         port = res.body.port;
         botCount = res.body.botCount;
-        indexFile = indexFile.replace('#PORT', port).replace('#PORT', port);
         
         let rootDialog = beautify(getDialog(syntaxTree, botCount));
         let indexFile = beautify(getIndexFile(Object.keys(syntaxTree["intents"])));
         let microBots = microBotGenerator(syntaxTree['microBots']);
-        let databaseUtilsTemplate = fs.readFileSync('./databaseUtils.txt', 'utf-8');
-        databaseUtilsTemplate = databaseUtilsTemplate.replace('#user', user);
+        
+        let databaseUtils = databaseUtilsTemplate.replace('#user', user);
 
+        indexFile = indexFile.replace('#PORT', port).replace('#PORT', port);
         for(subIntent in syntaxTree['subIntents'])
         {
             syntaxTree['intents'][subIntent] = syntaxTree['subIntents'][subIntent];
@@ -174,7 +175,7 @@ function createBot(syntaxTree, user, cb)
             'indexFile': indexFile,
             'rootDialog': rootDialog,
             'mBots': mBots,
-            'databaseUtils': databaseUtilsTemplate
+            'databaseUtils': databaseUtils
         }
         needle.post(deployURL + '/deploy/', obj, function(res, err) {
             console.log('HOSTED!');

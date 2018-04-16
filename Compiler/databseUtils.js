@@ -1,13 +1,17 @@
 const MongoClient = require('mongodb').MongoClient;
 const assert = require('assert');
-const url = "mongodb://code:c0deMa$ter@52.226.73.198:6599/admin";
-const dbName = "#user";
+const url = "mongodb://code:c0deMa%24ter@52.226.73.198:6599/admin";
+var dbName = "deployservice";
 var semaphore = require('semaphore')
 var semaphores = {}
 
 var utils = {
     
     client: undefined,
+
+    setDBName: function(dbName) {
+        dbName = dbName;
+    },
 
     addValues: async function (CollectionName, values) {
         try {

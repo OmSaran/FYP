@@ -30,7 +30,7 @@ module.exports = {
         return template.replace('#code', 'await dbUtils.updateValues("' + response['table'] +'_bot' + botCount + '", ' + json + ', {"user": this.uuid, "index": index});')
     },
 
-    getRetrieveCode: function (response, user, botCount) {
+    getRetrieveCode: function (response, botCount) {
         let json = this.generateJson(response['filter']);
         let required = ' ';
         response['columns'].map((column) => {
