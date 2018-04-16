@@ -1,21 +1,20 @@
 var beautify = require('js-beautify').js_beautify;
 var fs = require('fs');
 var ncp = require('ncp').ncp;
-var needle = require('needle');
 var microBotGenerator = require('./microBotGenerator')
 var databaseCodeGen = require('./dataBaseCodeGen')
 var entities = require('../../entities');
 var intents = require('../../intents');
 var dialogFlow = require('../../DialogFlow');
 
-
 let stateTemplate = fs.readFileSync('./Machines/CompilerUtils/stateTemplate.txt', 'utf-8')
 let dialogTemplate = fs.readFileSync('./Machines/CompilerUtils/dialogTemplate.txt', 'utf-8')
 let indexTemplate = fs.readFileSync('./Machines/CompilerUtils/indexTemplate.txt', 'utf-8')
 let updateTemplate = fs.readFileSync('./Machines/CompilerUtils/updateCode.txt', 'utf-8')
-let databaseUtilsTemplate = fs.readFileSync('./Machines/CompilerUtils/databaseUtils.txt', 'utf-8');
 
-function getStateEntryCode(response, intent, botCount)
+let port = 5000;
+
+function getStateEntryCode(response, intent)
 {
     if(response['type'] == 'text')
         return 'replier(this.uuid, "' + response['value'] + '");';
@@ -24,7 +23,7 @@ function getStateEntryCode(response, intent, botCount)
     {
         //Default table being used, need to change this, ask table name from the user in responseFlowMachine
         // context.result.parameters
-        let code = databaseCodeGen.getStoreCode(response, botCount) + '\nreplier(this.uuid, "' + response['value'] + '");';  
+        let code = databaseCodeGen.getStoreCode(response) + '\nreplier(this.uuid, "' + response['value'] + '");';  
         return code;
     }
 
@@ -35,12 +34,12 @@ function getStateEntryCode(response, intent, botCount)
 
     else if(response['type'] == 'get')
     {
-        return databaseCodeGen.getRetrieveCode(response, botCount);
+        return databaseCodeGen.getRetrieveCode(response);
     }
 
     else if(response['type'] == 'update')
     {
-        return databaseCodeGen.getUpdateCode(response, botCount);
+        return databaseCodeGen.getUpdateCode(response);
     }
 
     else
@@ -49,7 +48,7 @@ function getStateEntryCode(response, intent, botCount)
     }
 }
 
-function createStates(syntaxTree, botCount)
+function createStates(syntaxTree)
 {
     let states = []
     let intents = Object.keys(syntaxTree["intents"]);
@@ -60,12 +59,12 @@ function createStates(syntaxTree, botCount)
 
         // CODE generation part
         let response = syntaxTree["intents"][intents[i]]["response"];
-        let code = getStateEntryCode(response, intents[i], botCount);
+        let code = getStateEntryCode(response, intents[i]);
         
         if(response['type'] == 'update' || response['type'] == 'delete')
         {
             // replace newState's transition with this transition code
-            newState = newState.replace('//transitions', databaseCodeGen.getTransitionCode(response, updateTemplate + ',\n//transitions', botCount));
+            newState = newState.replace('//transitions', databaseCodeGen.getTransitionCode(response, updateTemplate + ',\n//transitions'));
         }
 
         newState = newState.replace("#code", code);
@@ -89,10 +88,10 @@ function createStates(syntaxTree, botCount)
     return states;
 }
 
-function getDialog(syntaxTree, botCount)
+function getDialog(syntaxTree)
 {
     let intents = Object.keys(syntaxTree["intents"])
-    let states = createStates(syntaxTree, botCount);
+    let states = createStates(syntaxTree);
     let dialog = dialogTemplate;
 
     for(let i in states)
@@ -122,78 +121,61 @@ function getIndexFile(intents)
     return indexFile;
 }
 
-function createBot(syntaxTree, user, cb)
+function createBot(syntaxTree, user)
 {
-    // let dir = './OutputBots/' + user;
-    var port;
-    var deployURL = 'http://localhost:27015'
-    needle.post(deployURL + '/deploy/port', {'user': user }, function(err, res) {
-        if (err) {
-            console.log('ERROR!!');
-            return console.log(err.body);
-        }
-        
-        port = res.body.port;
-        botCount = res.body.botCount;
-        
-        let rootDialog = beautify(getDialog(syntaxTree, botCount));
-        let indexFile = beautify(getIndexFile(Object.keys(syntaxTree["intents"])));
-        let microBots = microBotGenerator(syntaxTree['microBots']);
-        
-        let databaseUtils = databaseUtilsTemplate.replace('#user', user);
+    let rootDialog = beautify(getDialog(syntaxTree));
+    let indexFile = beautify(getIndexFile(Object.keys(syntaxTree["intents"])));
+    let microBots = microBotGenerator(syntaxTree['microBots']);
 
-        indexFile = indexFile.replace('#PORT', port).replace('#PORT', port);
-        for(subIntent in syntaxTree['subIntents'])
+    let dir = './OutputBots/' + user;
+    indexFile = indexFile.replace('#PORT', port++).replace('#PORT', port);
+
+    if(!fs.existsSync(dir))
+        fs.mkdirSync(dir);
+    
+    const count = fs.readdirSync(dir).length;
+    let botDir = dir + '/bot' + count;
+    
+    for(subIntent in syntaxTree['subIntents'])
+    {
+        syntaxTree['intents'][subIntent] = syntaxTree['subIntents'][subIntent];
+    }
+
+// console.log(df.intents.useWebHook);
+    // let df = dialogFlow(syntaxTree['token']);
+    // df.entities.create(syntaxTree, function(error, results) {
+    //     if(error) {
+    //         return console.log("error in entity creation!");
+    //     }
+    //     console.log(results);
+    //     df.intents.useWebHook(() => {console.log('Done default')});
+    //     df.intents.create(syntaxTree, function(error, results) {        
+    //         if(error) {
+    //             return console.log (error + "\n\nError in intents creation \n\n");
+    //         }
+    //         console.log(results)
+    //     })
+    // });
+
+    fs.mkdirSync(botDir);
+    ncp('./Template', botDir, (err) => {
+        if(err){
+            console.log('ERROR' + err);
+        }
+        else
         {
-            syntaxTree['intents'][subIntent] = syntaxTree['subIntents'][subIntent];
-        }
-
-        let df = dialogFlow(syntaxTree['token']);
-        df.entities.create(syntaxTree, function(error, results) {
-            if(error) {
-                return console.log("error in entity creation!");
+            for(mb in microBots)
+            {
+                fs.writeFileSync(botDir + '/Machines/' + mb + '.js', microBots[mb].replace('#machineName', mb + 'Bot'));
+                rootDialog = rootDialog.replace('//require', 'var ' + mb + ' = require("' + './' + mb + '");\n//require');
             }
-            df.intents.useWebHook(() => {console.log('Done default')});
-            df.intents.create(syntaxTree, function(error, results) {        
-                if(error) {
-                    return console.log (error + "\n\nError in intents creation \n\n");
-                }
-            })
-        });
-
-        mBots = [];
-
-        for(mb in microBots) {
-            mBots.push(microBots[mb].replace('#machineName', mb + 'Bot'));
-            rootDialog = rootDialog.replace('//require', 'var ' + mb + ' = require("' + './' + mb + '");\n//require');
+                
+            fs.writeFileSync(botDir + '/index.js', indexFile, 'utf-8');
+            fs.writeFileSync(botDir + '/Machines/RootDialog.js', rootDialog, 'utf-8');
+            
+            console.log('DONE');
         }
-        console.log(mBots);
-        obj = {
-            'user': user,
-            'botCount': botCount,
-            'port': port,
-            'indexFile': indexFile,
-            'rootDialog': rootDialog,
-            'mBots': mBots,
-            'databaseUtils': databaseUtils
-        }
-        needle.post(deployURL + '/deploy/', obj, function(res, err) {
-            console.log('HOSTED!');
-            console.log(port);
-            cb(port);
-        })
-    })
-}
-
-function deployBot(userId, count) {
-
+    });
 }
 
 module.exports = createBot;
-
-
-/* TODO:
-1. Send all the files with the expanded template to the deployService.
-2. In the deployService, replace port for the index file.
-3. Copy the files to the appropriate directory. (Moving same logic to deployService.)
-*/
