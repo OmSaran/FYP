@@ -7,6 +7,17 @@ async function addUser(user, database) {
     const client = await MongoClient.connect(url);
     const db = await client.db(database);
     let password = uuidv4();
+    try {
+        let response = await db.command({
+            updateUser: user,
+            pwd: password
+        });
+        console.log('Changed password to ' + password);
+        return;
+    } 
+    catch (error) {
+        console.log(error);
+    }
     
     try 
     {
@@ -18,6 +29,8 @@ async function addUser(user, database) {
                 }
             ]
         });
+        console.log('Created User, password: ');
+        console.log(password);
         console.log(response);   
     }
     
