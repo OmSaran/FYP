@@ -142,7 +142,7 @@ function createBot(syntaxTree, user, cb)
         
         let databaseUtils = databaseUtilsTemplate.replace('#user', user);
 
-        indexFile = indexFile.replace('#PORT', port).replace('#PORT', port);
+        // indexFile = indexFile.replace('#PORT', port).replace('#PORT', port);
         for(subIntent in syntaxTree['subIntents'])
         {
             syntaxTree['intents'][subIntent] = syntaxTree['subIntents'][subIntent];
