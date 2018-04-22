@@ -122,7 +122,7 @@ function getIndexFile(intents)
     return indexFile;
 }
 
-function createBot(syntaxTree, user, cb)
+function createBot(syntaxTree, user, botName, cb)
 {
     // let dir = './OutputBots/' + user;
     var port;
@@ -136,7 +136,7 @@ function createBot(syntaxTree, user, cb)
         port = res.body.port;
         botCount = res.body.botCount;
         
-        let rootDialog = beautify(getDialog(syntaxTree, botCount));
+        let rootDialog = beautify(getDialog(syntaxTree, botName + '_' + botCount));
         let indexFile = beautify(getIndexFile(Object.keys(syntaxTree["intents"])));
         let microBots = microBotGenerator(syntaxTree['microBots']);
         

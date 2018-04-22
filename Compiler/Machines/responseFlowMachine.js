@@ -1,7 +1,7 @@
 var machina = require('machina')
 var replier = require('../Utils/reply')
 var machineGenerator = require('./CompilerUtils/machineGenerator')
-// context.result.prameters 
+
 module.exports = machina.Fsm.extend({
 
     initialize: function (options) {
@@ -9,6 +9,7 @@ module.exports = machina.Fsm.extend({
         this.context = options.context
         this.intents = options.intents;
         this.entities = options.entities;
+        this.botName = options.botName;
         this.i = 0;
         this.intentNames = Object.keys(this.intents);
     },
@@ -162,7 +163,8 @@ module.exports = machina.Fsm.extend({
                 let syntaxTree = {"intents": this.intents, "entities": this.entities, 'token': accessToken};
                 console.log(JSON.stringify(syntaxTree));
                 self = this;
-                machineGenerator(syntaxTree, this.context.sessionId, function(port) {
+                replier(this.res, "Thank you for using bot script");
+                machineGenerator(syntaxTree, this.context.sessionId, this.botName, function(port) {
                     replier(self.res, "Generating your bot..... " + 'http://52.226.73.198:' + port);
                 });                
             },
@@ -170,7 +172,7 @@ module.exports = machina.Fsm.extend({
             string: function(context, res){
                 this.context = context;
                 this.res = res;
-                replier(this.res, 'Thank you for using this service to generate your own bot');
+                replier(this.res, 'Thank you for using this service to generate your own bot, you can tell restart to create a new bot now.');
             }
         }
     }
