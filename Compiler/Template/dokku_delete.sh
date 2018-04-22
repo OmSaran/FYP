@@ -1,0 +1,1 @@
+dokku --force apps:destroy $1

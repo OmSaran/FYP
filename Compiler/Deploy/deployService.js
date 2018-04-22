@@ -36,6 +36,35 @@ app.ws('/deploy', function(ws, req) {
     })
 })
 
+function handleDeployDELETE(ws, msg) {
+    var body = msg.payload;
+    var user = body.user;
+    var botDir = 'bot' + body.botCount;
+
+    var dir = '../OutputBots' + sep + user + sep + botDir;
+
+    if(!fs.existsSync(dir))
+        return ws.send({status: 400, message: 'Bot does not exist'});
+
+    var cmd = dir + sep + 'dokku_delete.sh ' + user + '-' + botDir;
+    exec(cmd, (err, stdout, stderr) => {
+        if(err) {
+            console.log(err);
+            return ws.send(JSON.stringify({
+                message: 'Error',
+                status: 500
+            }))
+        }
+        var dokkuLogs = stderr;
+        console.log(dokkuLogs);
+        ws.send(JSON.stringify({
+            'message': 'Delete successful',
+            'output': dokkuLogs,
+            'status': 200
+        }));
+    })
+}
+
 function handleDeployPUT(ws, msg) {
     var body = msg.payload;
     var user = body.user;
@@ -52,7 +81,7 @@ function handleDeployPUT(ws, msg) {
     var rootDir = dir + sep + 'Machines' + sep + 'RootDialog.js';
     fs.writeFileSync(rootDir, rootDialog);
 
-    cmd = dir + sep + 'dokku_update.sh ' + dir;
+    var cmd = dir + sep + 'dokku_update.sh ' + dir;
     exec(cmd, (err, stdout, stderr) => {
         if(err) {
             console.log(err);
