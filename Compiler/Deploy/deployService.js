@@ -8,6 +8,7 @@ var bodyParser = require('body-parser');
 const { exec } = require('child_process');
 var fs = require('fs');
 var db = require('../databseUtils.js');
+var expressWs = require('express-ws')(app);
 
 // middlewares
 app.use(bodyParser.urlencoded({ extended: false }))
@@ -18,27 +19,71 @@ app.get('/', function() {
 })
 
 // temp
-app.post('/deploy/port', function(req, res) {
-    var port = 892475;
-    var botCount = 39827;
-    res.json({
-        'message': 'Success',
-        'port': port,
-        'botCount': botCount
-    }).status(200);
+
+app.ws('/deploy', function(ws, req) {
+    ws.on('message', function(msg) {
+        msg = JSON.parse(msg);
+        switch(msg.method) {
+            case 'POST': 
+                handleDeployPOST(ws, msg);
+                break;
+            case 'PUT':
+                handleDeployPUT(ws, msg);
+                break;
+            case 'DELETE':
+                handleDeployDELETE(ws, msg);
+        }
+    })
 })
 
-app.post('/deploy', function(req, res) {
-    console.log(req.body.user);
-    if(!requestValidator.validateParams(req.body, ['user', 'botCount', 'port', 
-    'indexFile', 'rootDialog', 'databaseUtils']) ) {
-      console.log('Bad request!');
-      return res.json({
-        'message': 'Invalid Input'
-      }).status(400);
+function handleDeployPUT(ws, msg) {
+    var body = msg.payload;
+    var user = body.user;
+    var botDir = 'bot' + body.botCount;
+    var rootDialog = body.rootDialog;
+
+    var sep = '/'
+    var dir = '../OutputBots' + sep + user + sep + botDir
+
+    // Checking if bot dir exists. If not throw error.
+    if(!fs.existsSync(dir))
+        return ws.send({status: 400, message: 'Bot does not exist'});
+    
+    var rootDir = dir + sep + 'Machines' + sep + 'RootDialog.js';
+    fs.writeFileSync(rootDir, rootDialog);
+
+    cmd = dir + sep + 'dokku_update.sh ' + dir;
+    exec(cmd, (err, stdout, stderr) => {
+        if(err) {
+            console.log(err);
+            return ws.send(JSON.stringify({
+                message: 'Error',
+                status: 500
+            }))
+        }
+        var dokkuLogs = stderr;
+        console.log(dokkuLogs);
+        ws.send(JSON.stringify({
+            'message': 'Update successful',
+            'output': dokkuLogs,
+            'status': 200
+        }));
+    });
+}
+
+
+function handleDeployPOST(ws, msg) {
+    var req = {};
+    req.body = msg.payload;
+    if(!requestValidator.validateParams(req.body, ['user', 'indexFile', 'rootDialog', 'databaseUtils', 'botCount']) ) {
+        console.log('Bad request!');
+        return ws.send({
+            'message': 'Invalid Input',
+            status: 400
+        })
     }
     var user = req.body.user;
-    var botCount = req.body.count;
+    var botCount = req.body.botCount;
     var port = req.body.port;
     var indexFile = req.body.indexFile;
     var databaseUtils = req.body.databaseUtils;
@@ -52,8 +97,8 @@ app.post('/deploy', function(req, res) {
         if(!fs.existsSync(dir))
             fs.mkdirSync(dir);
 
-        const count = fs.readdirSync(dir).length;
-        let botDir = dir + '/bot' + count;
+        // const count = fs.readdirSync(dir).length;
+        let botDir = dir + '/bot' + botCount;
         fs.mkdirSync(botDir);
 
         console.log('MADE DIRECTORY!! ' + botDir);
@@ -80,19 +125,28 @@ app.post('/deploy', function(req, res) {
             console.log('BEFORE');
             
             var server_ip = '52.226.73.198'
-            var rm_cmd = 'rm -rf ' + botDir + '/.git;';
-            var cmd = botDir + '/dokku_deploy.sh ' + botDir + ' ' + server_ip + ' ' + user + ' bot' + count
-            console.log('*** CMD ***');
-            console.log(cmd);
-            console.log(' ********** ');
+            var cmd = botDir + '/dokku_deploy.sh ' + botDir + ' ' + server_ip + ' ' + user + ' bot' + botCount
             exec(cmd, (err, stdout, stderr) => {
-                console.log(stdout);
-                console.log(err);
-                console.log(stderr);
+                if(err) {
+                    return ws.send(JSON.stringify({
+                        message: 'Error',
+                        status: 500
+                    }))
+                }
+                var dokkuLogs = stderr;
+                var address = dokkuLogs.split('\n')
+                address = address[address.length - 5]
+                address = address.substring(address.indexOf('http://'), address.length);
+                console.log(address);
+                ws.send(JSON.stringify({
+                    'message': 'Deployment successful',
+                    'address': address,
+                    'status': 200
+                }))
             });
         });
     }
     deployAndStartService()
-})
+}
 
 app.listen(PORT, function() { console.log('listening on port ' + PORT) });
