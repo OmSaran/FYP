@@ -12,20 +12,57 @@ module.exports = machina.Fsm.extend({
         this.entities = {} // "entity": []
         this.intentName = ""
         this.entitiyTypes = { dateTime: "@sys.date-time", number: "@sys.number", text: "@sys.any" }
-        replier(this.res, "Hey, welcome to BotScript, I will help you build a bot by just talking to me" + "Let me know the query type you would want your bot to answer");
+        replier(this.res, "Hey, I will help you build a bot by asking you a few questions" + ". What would you like to call this bot?");
     },
 
-    initialState: 'askIntentName',
+    initialState: 'askName',
 
     states: {
-        askIntentName: {
-            _onEnter: function () {
+        askName: {
+            _onEnter: function() {
             },
 
             string: function (context, res) {
                 this.res = res;
                 this.context = context;
-                this.intentName = context.result.resolvedQuery;
+                this.botName = context.result.resolvedQuery;
+                this.transition('confirmBotName');
+            }
+        },
+
+        confirmBotName: {
+            _onEnter: function() {
+                replier(this.res, "Ok, Shall I name it as " + this.botName + "?");
+            },
+
+            yes: function(context, res) {
+                this.res = res;
+                this.context = context;
+                this.transition('askIntentName');
+            },
+
+            no: function(context, res) {
+                this.res = res;
+                this.context = context;
+                this.transition('askName');
+            },
+
+            string: function (context, res) {
+                this.res = res;
+                this.context = context;
+                replier(this.res, "sorry :( ");
+            }
+        },
+
+        askIntentName: {
+            _onEnter: function () {
+                replier(this.res, "Ok, Tell me an activity your bot can do");
+            },
+
+            string: function (context, res) {
+                this.res = res;
+                this.context = context;
+                this.intentName = context.result.resolvedQuery.replace(/[\W_]+/g,"_");
                 this.transition('confirmIntentName');
                 // this.transition('askEntityName');
             },
@@ -312,7 +349,7 @@ module.exports = machina.Fsm.extend({
                 this.context = context;
                 let uuid = context.sessionId;
                 console.log('changing bot')
-                bots[uuid] = new responseBot({context: context, res: res, intents: this.intents, entities: this.entities});
+                bots[uuid] = new responseBot({context: context, res: res, intents: this.intents, entities: this.entities, botName: this.botName});
             }
         }
     }

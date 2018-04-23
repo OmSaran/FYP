@@ -57,13 +57,10 @@ app.post('/', jsonParser, (req, res) => {
 
     else
     {
-        let intent = 'string';
-
-        if(req.body.result.resolvedQuery == 'yes')
-            intent = 'yes';
-    
-        else if(req.body.result.resolvedQuery == 'no')
-            intent = 'no';
+        let intent = req.body.result.metadata.intentName;
+        
+        if(intent == 'Default Fallback Intent')
+            intent = 'string';
         
         semaphores[uuid].take(function(){
             console.log('USER: ' + uuid + ' said : ' + req.body.result.resolvedQuery);

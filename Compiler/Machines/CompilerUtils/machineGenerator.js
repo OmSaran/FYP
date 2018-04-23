@@ -126,9 +126,8 @@ function getIndexFile(intents)
     return indexFile;
 }
 
-function createBot(syntaxTree, user, cb)
+function createBot(syntaxTree, user, botName, cb)
 {
-    var deployURL = 'http://localhost:27015';
 
     let dir = './OutputBots/' + user;
     if(!fs.existsSync(dir))

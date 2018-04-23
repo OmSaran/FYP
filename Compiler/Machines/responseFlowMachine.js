@@ -9,6 +9,7 @@ module.exports = machina.Fsm.extend({
         this.context = options.context
         this.intents = options.intents;
         this.entities = options.entities;
+        this.botName = options.botName;
         this.i = 0;
         this.intentNames = Object.keys(this.intents);
     },
@@ -35,11 +36,78 @@ module.exports = machina.Fsm.extend({
                 else
                     replier(this.res, 'Sorry I did not understand, tell is it db or text');
             }
-        },
+        },  
 
         getDbRule: {
             _onEnter: function(){
                 replier(this.res, 'What do you want to do get parameters, store parameters or update parameters. Reply with get, store or update');
+            },
+
+            dbGetRule_yes: function(context, res) {
+                this.context = context;
+                this.res = res;
+                let contexts = context.result.contexts;
+                let table = context.result.contexts[contexts.length - 1].parameters.tableName;
+                let parameters = context.result.contexts[contexts.length - 1].parameters.columnNames.split(",");
+                let filter = context.result.contexts[contexts.length - 1].parameters.filter;
+                let response = context.result.contexts[contexts.length - 1].parameters.responseText;
+
+                this.intents[this.intentNames[this.i]]['response'] = {'value': response, 'type': 'get', 'columns': parameters, 'filter': filter.length > 0 ? filter.split(',') : [], 'table': table};
+
+                ++this.i;
+
+                if(this.i < this.intentNames.length)
+                    this.transition('askReply');
+                else
+                    this.transition('dfSignIn');
+            },
+
+            dbGetRule_no: function(context, res) {
+                    this.transition('askReply');
+            },
+
+            dbStoreRule_yes: function(context, res){
+                this.context = context;
+                this.res = res;
+                console.log(JSON.stringify(context));
+                let contexts = context.result.contexts;
+                let table = context.result.contexts[contexts.length - 1].parameters.tableName;
+                let parameters = context.result.contexts[contexts.length - 1].parameters.coloumnNames.split(",");
+                let response = context.result.contexts[contexts.length - 1].parameters.responseText;
+
+                this.intents[this.intentNames[this.i]]['response'] = { 'value': response, 'type': 'store', 'columns': parameters, 'table': table };
+
+                ++this.i;
+
+                if (this.i < this.intentNames.length)
+                    this.transition('askReply');
+                else
+                    this.transition('dfSignIn');
+            },
+
+            dbStoreRule_no: function(context, res) {
+                this.transition('askReply');
+            },
+
+            dbUpdateRule_yes: function(context, res) {
+                this.context = context;
+                this.res = res;
+                let contexts = context.result.contexts;
+                let table = context.result.contexts[contexts.length - 1].parameters.tableName;
+                let parameters = context.result.contexts[contexts.length - 1].parameters.coloumnNames.split(",")
+
+                this.intents[this.intentNames[this.i]]['response'] = {'type': 'update', 'columns': parameters, 'table': table };
+
+                ++this.i;
+
+                if (this.i < this.intentNames.length)
+                    this.transition('askReply');
+                else
+                    this.transition('dfSignIn');
+            },
+
+            dbUpdateRule_no: function(context, res){
+                this.transition('askReply')
             },
 
             string: function(context, res)
@@ -48,114 +116,12 @@ module.exports = machina.Fsm.extend({
                 this.res = res;
                 let type = context.result.resolvedQuery + '';
                 type = type.toLowerCase();
+            
+               replier(this.res, 'I did not get it, what do you want to do? store or get or update?')
                 
-                if(type == 'get')
-                    this.transition('dbGetRule');
-                else if(type == 'store')
-                    this.transition('dbStoreRule');
-                else if(type == 'update')
-                    this.transition('dbUpdateRule');
-                
-                else
-                {
-                    replier(this.res, 'I did not get it, what do you want to do? store or get or update?')
-                }
             }
         },
-
-        dbGetRule: {
-            _onEnter: function(){
-                replier(this.res, 'tell me the table name and parameters you want to get and any filters and response text to use the parameters in with $ in between them. If you want to add a value to the filter manually use = . Example : order$toppings,status$finished=no$Status of your order with @toppings is @status');
-            },
-
-            string: function(context, res){
-                try {
-                    this.context = context;
-                    this.res = res;
-                    let template = context.result.resolvedQuery + '';
-                    let parts = template.split('$');
-                    
-                    let table = parts[0];
-                    let parameters = parts[1];
-                    let filter = parts[2];
-                    let response = parts[3];
-
-                    this.intents[this.intentNames[this.i]]['response'] = {'value': response, 'type': 'get', 'columns': parameters.split(','), 'filter': filter.length > 0 ? filter.split(',') : [], 'table': table};
-
-                    ++this.i;
-
-                    if(this.i < this.intentNames.length)
-                        this.transition('askReply');
-                    else
-                        this.transition('dfSignIn');
-                } 
-                catch (e) {
-                    console.error(e);
-                    replier(this.res, 'Example : order$toppings,status$finished=no$Status of your order with @toppings is @status');
-                }
-            }
-        },
-
-        dbStoreRule: {
-            _onEnter: function(){
-                replier(this.res, 'Tell me the parameters you want to store and the table in which you want to store them and if you want to store any other parameter not collected in the conversation use =. Example: orders$toppings,status=not confirmed,finished=no,size,base$Your order has been recorded!');
-            },
-
-            string: function(context, res){
-                try {
-                    this.context = context;
-                    this.res = res;
-                    let template = context.result.resolvedQuery + '';
-                    let parts = template.split('$');
-
-                    let table = parts[0];
-                    let parameters = parts[1];
-                    let response = parts[2];
-
-                    this.intents[this.intentNames[this.i]]['response'] = { 'value': response, 'type': 'store', 'columns': parameters.split(','), 'table': table };
-
-                    ++this.i;
-
-                    if (this.i < this.intentNames.length)
-                        this.transition('askReply');
-                    else
-                        this.transition('dfSignIn');
-                } catch (error) {
-                    console.error(error);
-                    replier(this.res, 'Tell me the parameters you want to store and the table in which you want to store them and if you want to store any other parameter not collected in the conversation use =. Example: orders$toppings,status=not confirmed,finished=no,size,base$Your order has been recorded!');
-                }
-            },
-        },
-
-        dbUpdateRule: {
-            _onEnter: function(){
-                replier(this.res, 'Let me know the parameters you want to update and table name. Example: orders$size,finished=yes');
-            },
-            string: function(context, res){
-                try {
-                    this.context = context;
-                    this.res = res;
-                    let template = context.result.resolvedQuery + '';
-                    let parts = template.split('$');
-
-                    let table = parts[0];
-                    let parameters = parts[1];
-
-                    this.intents[this.intentNames[this.i]]['response'] = {'type': 'update', 'columns': parameters.split(','), 'table': table };
-
-                    ++this.i;
-
-                    if (this.i < this.intentNames.length)
-                        this.transition('askReply');
-                    else
-                        this.transition('dfSignIn');
-                } catch (error) {
-                    console.error(error);
-                    replier(this.res, 'Tell me the parameters you want to store and the table in which you want to store them and if you want to store any other parameter not collected in the conversation use =. Example: orders$toppings,status=not confirmed,finished=no,size,base$Your order has been recorded!');
-                }
-            }
-        },
-
+        
         getStaticText: {
             _onEnter: function(){
                 replier(this.res, 'ok, tell me what I should respond with, I will tell the exact same thing when the user\'s intention is ' + this.intentNames[this.i]);
@@ -205,7 +171,7 @@ module.exports = machina.Fsm.extend({
             string: function(context, res){
                 this.context = context;
                 this.res = res;
-                replier(this.res, 'Thank you for using this service to generate your own bot');
+                replier(this.res, 'Thank you for using this service to generate your own bot, you can tell restart to create a new bot now.');
             }
         }
     }
