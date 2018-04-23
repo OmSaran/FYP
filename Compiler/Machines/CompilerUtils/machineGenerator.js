@@ -7,7 +7,7 @@ var databaseCodeGen = require('./dataBaseCodeGen')
 var entities = require('../../entities');
 var intents = require('../../intents');
 var dialogFlow = require('../../DialogFlow');
-
+var path = require('path');
 
 let stateTemplate = fs.readFileSync('./Machines/CompilerUtils/stateTemplate.txt', 'utf-8')
 let dialogTemplate = fs.readFileSync('./Machines/CompilerUtils/dialogTemplate.txt', 'utf-8')
@@ -122,67 +122,27 @@ function getIndexFile(intents)
     return indexFile;
 }
 
-function createBot(syntaxTree, user, botName, cb)
+function getDirectoryPathForUser(user)
 {
-    // let dir = './OutputBots/' + user;
-    var port;
-    var deployURL = 'http://localhost:27015'
-    needle.post(deployURL + '/deploy/port', {'user': user }, function(err, res) {
-        if (err) {
-            console.log('ERROR!!');
-            return console.log(err.body);
-        }
-        
-        port = res.body.port;
-        botCount = res.body.botCount;
-        
-        let rootDialog = beautify(getDialog(syntaxTree, botName + '_' + botCount));
-        let indexFile = beautify(getIndexFile(Object.keys(syntaxTree["intents"])));
-        let microBots = microBotGenerator(syntaxTree['microBots']);
-        
-        let databaseUtils = databaseUtilsTemplate.replace('#user', user);
+    let syntaxTreeStorePath = path.join(process.cwd(), 'trees');
 
-        indexFile = indexFile.replace('#PORT', port).replace('#PORT', port);
-        for(subIntent in syntaxTree['subIntents'])
-        {
-            syntaxTree['intents'][subIntent] = syntaxTree['subIntents'][subIntent];
-        }
+    if(!fs.existsSync(syntaxTreeStorePath))
+        fs.mkdirSync(syntaxTreeStorePath);
+    
+    let userTreeStorePath = path.join(syntaxTreeStorePath, user);
 
-        let df = dialogFlow(syntaxTree['token']);
-        df.entities.create(syntaxTree, function(error, results) {
-            if(error) {
-                return console.log("error in entity creation!");
-            }
-            df.intents.useWebHook(() => {console.log('Done default')});
-            df.intents.create(syntaxTree, function(error, results) {        
-                if(error) {
-                    return console.log (error + "\n\nError in intents creation \n\n");
-                }
-            })
-        });
+    if(!fs.existsSync(userTreeStorePath))
+        fs.mkdirSync(userTreeStorePath);
 
-        mBots = [];
+    return userTreeStorePath;
+}
 
-        for(mb in microBots) {
-            mBots.push(microBots[mb].replace('#machineName', mb + 'Bot'));
-            rootDialog = rootDialog.replace('//require', 'var ' + mb + ' = require("' + './' + mb + '");\n//require');
-        }
-        console.log(mBots);
-        obj = {
-            'user': user,
-            'botCount': botCount,
-            'port': port,
-            'indexFile': indexFile,
-            'rootDialog': rootDialog,
-            'mBots': mBots,
-            'databaseUtils': databaseUtils
-        }
-        needle.post(deployURL + '/deploy/', obj, function(res, err) {
-            console.log('HOSTED!');
-            console.log(port);
-            cb(port);
-        })
-    })
+function createBot(syntaxTree, user, botName, cb)
+{  
+    let botCount = fs.readdirSync(getDirectoryPathForUser(user)).length + 1;
+
+    let fileName = "bot" + botCount + '.json';
+    fs.writeFileSync(fileName, JSON.stringify(syntaxTree, null, '\t'));
 }
 
 function deployBot(userId, count) {

@@ -4,7 +4,11 @@ var Widget = require('react-chat-widget').Widget;
 var addResponseMessage  = require('react-chat-widget').addResponseMessage;
 import 'react-chat-widget/lib/styles.css';
 import AppBar from 'material-ui/AppBar';
-import FlatButton from 'material-ui/FlatButton';
+import RaisedButton from 'material-ui/RaisedButton';
+import SwipeableViews from 'react-swipeable-views';
+import {Tabs, Tab} from 'material-ui/Tabs';
+import DataAccess from './DataAccess';
+import Editor from './Editor';
 
 class Chat extends React.Component<{}, ChatState>
 {
@@ -13,7 +17,12 @@ class Chat extends React.Component<{}, ChatState>
         this.googleFailure = this.googleFailure.bind(this)
         this.googleSuccess = this.googleSuccess.bind(this)
         this.handleNewUserMessage = this.handleNewUserMessage.bind(this);
-        this.state = { authState: AuthStates.verifying, ws: null }
+        this.state = { authState: AuthStates.verifying, ws: null, tabNumber: 0 }
+        this.changeTab = this.changeTab.bind(this);
+    }
+
+    changeTab(value: number) {
+        this.setState({tabNumber: value});
     }
 
     googleSuccess(response: any) {
@@ -99,30 +108,51 @@ class Chat extends React.Component<{}, ChatState>
 
         if(this.state.authState == AuthStates.loggedOut)
         {    
-            let googleLogin: any = <GoogleLogin
+            button = <GoogleLogin
                 clientId="73442255804-vncq031noc9anfj3td8q07dt02pllpve.apps.googleusercontent.com"
                 buttonText="Login"
                 onSuccess={this.googleSuccess}
                 onFailure={this.googleFailure}
-                style = {{visibility: 'hidden'}}
+                style={{backgroundColor: "orange", color: "white", border: "0px", width: 100, height: 40}}
             />;
-            button = (<FlatButton label = "LOGIN" onClick = {() => {googleLogin.click()}}>{googleLogin}</FlatButton>)
-            content = <p>Let us show a card here</p>
         }
 
         else if(this.state.authState == AuthStates.loggedIn)
         {
             button = (
-        <FlatButton onClick = {() => {localStorage.clear(); window.location.reload()}} label = "Logout"/>
+                <RaisedButton onClick={() => { localStorage.clear(); window.location.reload() }} label="Logout" secondary={true} />
             )
-            content = <Widget handleNewUserMessage={this.handleNewUserMessage} title="Bot Compiler" subtitle="Talk to me to create your own bot!" showCloseButton = {false}/>;
+            content = <div><Tabs
+                onChange={this.changeTab}
+                value={this.state.tabNumber}
+            >
+                <Tab label="Edit Your Bots" value={0} />
+                <Tab label="Access your data" value={1} />
+            </Tabs>
+                <SwipeableViews
+                    index={this.state.tabNumber}
+                    onChangeIndex={this.changeTab}
+                >
+                    <div>
+                        <Editor/>
+                    </div>
+                    <div>
+                       <DataAccess/>
+                    </div>
+                </SwipeableViews>
+                <Widget handleNewUserMessage={this.handleNewUserMessage} title="Bot Compiler" subtitle="Talk to me to create your own bot!" showCloseButton={false} />
+          </div>;
         }
 
+        else
+            content = 'Loggin in........'
+
         return (
-            <div>
+            <div style = {{fontFamily: "Roboto"}}>
             <AppBar
             title={<span>BotC</span>}
             iconElementRight={button}
+            style = {{boxShadow: "0px"}}
             />
             {content}
             </div>
@@ -134,7 +164,8 @@ enum AuthStates { loggedIn, loggedOut, verifying }
 
 interface ChatState {
     authState: AuthStates,
-    ws: WebSocket
+    ws: WebSocket,
+    tabNumber: number
 }
 
 export default Chat
