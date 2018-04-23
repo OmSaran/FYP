@@ -93,10 +93,10 @@ function createStates(syntaxTree, botCount)
     return states;
 }
 
-function getDialog(syntaxTree)
+function getDialog(syntaxTree, botCount)
 {
     let intents = Object.keys(syntaxTree["intents"])
-    let states = createStates(syntaxTree);
+    let states = createStates(syntaxTree, botCount);
     let dialog = dialogTemplate;
 
     for(let i in states)
@@ -144,13 +144,17 @@ function getDirectoryPathForUser(user)
 function createBot(syntaxTree, user, botName, cb)
 {  
     let botCount = fs.readdirSync(getDirectoryPathForUser(user)).length + 1;
+    botCount = botName + '_' + botCount;
 
     let fileName = "bot" + botCount + '.json';
-    fs.writeFileSync(fileName, JSON.stringify(syntaxTree, null, '\t'));
+    fs.writeFileSync(path.join(getDirectoryPathForUser(user), fileName), JSON.stringify(syntaxTree, null, '\t'), 'utf-8');
+
+    if(!fs.existsSync('./OutputBots'))
+        fs.mkdirSync('./OutputBots');
+
     let dir = './OutputBots/' + user;
     if(!fs.existsSync(dir))
         fs.mkdirSync(dir);
-    var botCount = fs.readdirSync(dir).length;
 
     let rootDialog = beautify(getDialog(syntaxTree, botCount));
     let indexFile = beautify(getIndexFile(Object.keys(syntaxTree["intents"])));
@@ -177,9 +181,7 @@ function createBot(syntaxTree, user, botName, cb)
             }
         })
     });
-}
-
-function deployBot(userId, count) {
+    cb(null, 'Starting to deploy your bot!');
 
     mBots = [];
 
@@ -210,6 +212,12 @@ function deployBot(userId, count) {
         cb(null, msg.address);
         ws.close()
     })
+
+}
+
+function deployBot(userId, count) {
+
+    
 }
 
 module.exports = createBot;

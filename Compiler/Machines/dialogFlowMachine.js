@@ -20,7 +20,7 @@ module.exports = machina.Fsm.extend({
     states: {
         askName: {
             _onEnter: async function() {
-                await this.res.df.deleteContexts(this.uuid);
+                await this.res.df.deleteContexts(this.context.sessionId);
             },
 
             string: function (context, res) {

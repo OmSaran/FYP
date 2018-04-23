@@ -155,24 +155,29 @@ function handleDeployPOST(ws, msg) {
             
             var server_ip = '52.226.73.198'
             var cmd = botDir + '/dokku_deploy.sh ' + botDir + ' ' + server_ip + ' ' + user + ' bot' + botCount
-            exec(cmd, (err, stdout, stderr) => {
-                if(err) {
-                    return ws.send(JSON.stringify({
-                        message: 'Error',
-                        status: 500
-                    }))
-                }
-                var dokkuLogs = stderr;
-                var address = dokkuLogs.split('\n')
-                address = address[address.length - 5]
-                address = address.substring(address.indexOf('http://'), address.length);
-                console.log(address);
-                ws.send(JSON.stringify({
-                    'message': 'Deployment successful',
-                    'address': address,
-                    'status': 200
-                }))
-            });
+            ws.send(JSON.stringify({
+                'message': 'Deployment successful',
+                'address': 'address',
+                'status': 200
+            }));
+            // exec(cmd, (err, stdout, stderr) => {
+            //     if(err) {
+            //         return ws.send(JSON.stringify({
+            //             message: 'Error',
+            //             status: 500
+            //         }))
+            //     }
+            //     var dokkuLogs = stderr;
+            //     var address = dokkuLogs.split('\n')
+            //     address = address[address.length - 5]
+            //     address = address.substring(address.indexOf('http://'), address.length);
+            //     console.log(address);
+            //     ws.send(JSON.stringify({
+            //         'message': 'Deployment successful',
+            //         'address': address,
+            //         'status': 200
+            //     }))
+            // });
         });
     }
     deployAndStartService()

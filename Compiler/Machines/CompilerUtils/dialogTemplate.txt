@@ -23,6 +23,10 @@ module.exports = machina.Fsm.extend({
                 
             },
 
+            '*' : function() {
+                replier(this.uuid, "Sorry I did not understand that");
+            },
+
             //allTransitions
         },
         //states

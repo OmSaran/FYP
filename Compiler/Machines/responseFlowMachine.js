@@ -1,5 +1,6 @@
 var machina = require('machina')
 var replier = require('../Utils/reply')
+var replierAsync = require('../Utils/replyAsync')
 var machineGenerator = require('./CompilerUtils/machineGenerator')
 
 module.exports = machina.Fsm.extend({
@@ -49,7 +50,7 @@ module.exports = machina.Fsm.extend({
                 this.res = res;
                 let contexts = context.result.contexts;
                 let table = context.result.contexts[contexts.length - 1].parameters.tableName;
-                let parameters = context.result.contexts[contexts.length - 1].parameters.columnNames.split(",");
+                let parameters = context.result.contexts[contexts.length - 1].parameters.coloumnNames.split(",");
                 let filter = context.result.contexts[contexts.length - 1].parameters.filter;
                 let response = context.result.contexts[contexts.length - 1].parameters.responseText;
 
@@ -164,8 +165,9 @@ module.exports = machina.Fsm.extend({
                 let syntaxTree = {"intents": this.intents, "entities": this.entities, 'token': accessToken};
                 console.log(JSON.stringify(syntaxTree));
                 self = this;
-                machineGenerator(syntaxTree, this.context.sessionId, function(error, address) {
-                    replier(self.res, "Generated your bot..... " + address);
+                replier(self.res, "Generating your bot..... ");
+                machineGenerator(syntaxTree, this.context.sessionId, this.botName, function(error, address) {
+                    replierAsync(self.res, "Generated your bot..... " + address);
                 });
             },
 
