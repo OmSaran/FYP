@@ -1,226 +1,181 @@
-// TODO: Handle undeploying the service.
-
 PORT = 27015
 
 var express = require('express');
-var app = express();
-var bodyParser = require('body-parser')
-var shell = require('shelljs');
+var app = express()
 var requestValidator = require('../Utils/reqValidator.js');
-var fs = require('fs');
-const { exec } = require('child_process');
 var ncp = require('ncp');
+var bodyParser = require('body-parser');
+const { exec } = require('child_process');
+var fs = require('fs');
 var db = require('../databseUtils.js');
-var _ = require('underscore');
-db.setDBName('deployservice');
+var expressWs = require('express-ws')(app);
 
-const getPort = require('get-port');
-
-// Dictonary containing the details of the port usage. Can be moved to DB for scaling up
-/*
-{  
-  "port": {
-    "user": "string",
-    "botCount": "integer",
-    "used": "boolean",
-    "timestamp": 
-  }
-}
-*/
-portMappings = {}
-lock = 0
-
+// middlewares
 app.use(bodyParser.urlencoded({ extended: false }))
 app.use(bodyParser.json())
 
-app.post('/deploy/port', function(req, res) {
-  console.log('Got request!');
-  console.log(JSON.stringify(portMappings))
-  var user = req.body.user;
-  var dir = '../OutputBots/' + user;
-  if(!fs.existsSync(dir))
-    fs.mkdirSync(dir);
-  const botCount = fs.readdirSync(dir).length;  
-  if(!requestValidator.validateParams(req.body, ['user'])) {
-    return res.json({
-      'message': 'Input error'
-    }).status(400)
-  }
-  
-  while(lock != 0) {}
-  lock = 1;
-  
-  getUnregisteredPort(user, botCount, function(port, err) {
-    if(err) {
-      res.json({
-        'message': 'Failed',
-      }).status(500);
-    }
-    res.json({
-      'message': 'Success',
-      'port': port,
-      'botCount': botCount
-    }).status(200);
-  });
+app.get('/', function() {
+    console.log('Deploy service is up!');
 })
 
-app.post('/deploy', function(req, res) {
-  console.log(req.body.user);
-  if(!requestValidator.validateParams(req.body, ['user', 'botCount', 'port', 
-  'indexFile', 'rootDialog', 'databaseUtils']) ) {
-    console.log('Bad request!');
-    return res.json({
-      'message': 'Invalid Input'
-    }).status(400);
-  }
-  var user = req.body.user;
-  var botCount = req.body.count;
-  var port = req.body.port;
-  var indexFile = req.body.indexFile;
-  var databaseUtils = req.body.databaseUtils;
-  var rootDialog = req.body.rootDialog;
-  var mBots = req.body.mBots;
-  var botCount = req.body.botCount;
-  while(lock !=0 ) {}
-  lock = 1;
-  registerAppMapping(user, botCount, port, function(results, err) {
-    if(err) {
-      console.log('Error registerAppMapping');
-      return res.json({
-        'message': 'Failed',
-      }).status(500);
+// temp
+
+app.ws('/deploy', function(ws, req) {
+    ws.on('message', function(msg) {
+        msg = JSON.parse(msg);
+        switch(msg.method) {
+            case 'POST': 
+                handleDeployPOST(ws, msg);
+                break;
+            case 'PUT':
+                handleDeployPUT(ws, msg);
+                break;
+            case 'DELETE':
+                handleDeployDELETE(ws, msg);
+        }
+    })
+})
+
+function handleDeployDELETE(ws, msg) {
+    var body = msg.payload;
+    var user = body.user;
+    var botDir = 'bot' + body.botCount;
+
+    var dir = '../OutputBots' + sep + user + sep + botDir;
+
+    if(!fs.existsSync(dir))
+        return ws.send({status: 400, message: 'Bot does not exist'});
+
+    var cmd = dir + sep + 'dokku_delete.sh ' + user + '-' + botDir;
+    exec(cmd, (err, stdout, stderr) => {
+        if(err) {
+            console.log(err);
+            return ws.send(JSON.stringify({
+                message: 'Error',
+                status: 500
+            }))
+        }
+        var dokkuLogs = stderr;
+        console.log(dokkuLogs);
+        ws.send(JSON.stringify({
+            'message': 'Delete successful',
+            'output': dokkuLogs,
+            'status': 200
+        }));
+    })
+}
+
+function handleDeployPUT(ws, msg) {
+    var body = msg.payload;
+    var user = body.user;
+    var botDir = 'bot' + body.botCount;
+    var rootDialog = body.rootDialog;
+
+    var sep = '/'
+    var dir = '../OutputBots' + sep + user + sep + botDir
+
+    // Checking if bot dir exists. If not throw error.
+    if(!fs.existsSync(dir))
+        return ws.send({status: 400, message: 'Bot does not exist'});
+    
+    var rootDir = dir + sep + 'Machines' + sep + 'RootDialog.js';
+    fs.writeFileSync(rootDir, rootDialog);
+
+    var cmd = dir + sep + 'dokku_update.sh ' + dir;
+    exec(cmd, (err, stdout, stderr) => {
+        if(err) {
+            console.log(err);
+            return ws.send(JSON.stringify({
+                message: 'Error',
+                status: 500
+            }))
+        }
+        var dokkuLogs = stderr;
+        console.log(dokkuLogs);
+        ws.send(JSON.stringify({
+            'message': 'Update successful',
+            'output': dokkuLogs,
+            'status': 200
+        }));
+    });
+}
+
+
+function handleDeployPOST(ws, msg) {
+    var req = {};
+    req.body = msg.payload;
+    if(!requestValidator.validateParams(req.body, ['user', 'indexFile', 'rootDialog', 'databaseUtils', 'botCount']) ) {
+        console.log('Bad request!');
+        return ws.send({
+            'message': 'Invalid Input',
+            status: 400
+        })
     }
+    var user = req.body.user;
+    var botCount = req.body.botCount;
+    var port = req.body.port;
+    var indexFile = req.body.indexFile;
+    var databaseUtils = req.body.databaseUtils;
+    var rootDialog = req.body.rootDialog;
+    var mBots = req.body.mBots;
     function deployAndStartService() {
-      console.log('deployAndStartService');
-      var outputBotBasePath = '../OutputBots/'
-      let dir = '../OutputBots/' + user;
-      console.log('Logging dir: ' + dir);
-      if(!fs.existsSync(dir))
-        fs.mkdirSync(dir);
+        console.log('deployAndStartService');
+        var outputBotBasePath = '../OutputBots/'
+        let dir = '../OutputBots/' + user;
+        console.log('Logging dir: ' + dir);
+        if(!fs.existsSync(dir))
+            fs.mkdirSync(dir);
 
-      const count = fs.readdirSync(dir).length;
-      let botDir = dir + '/bot' + botCount;
-      fs.mkdirSync(botDir);
+        // const count = fs.readdirSync(dir).length;
+        let botDir = dir + '/bot' + botCount;
+        fs.mkdirSync(botDir);
 
-      console.log('MADE DIRECTORY!! ' + botDir);
-      ncp('../Template', botDir, (err) => {
-        if(err){
-            console.log('ERROR' + err);
-        }
-        else
-        {
-            for(mb in mBots)
-            {
-                fs.writeFileSync(botDir + '/Machines/' + mb + '.js', mBots[mb]);
+        console.log('MADE DIRECTORY!! ' + botDir);
+        ncp('../Template', botDir, (err) => {
+            if(err){
+                console.log('ERROR' + err);
             }
+            else
+            {
+                for(mb in mBots)
+                {
+                    fs.writeFileSync(botDir + '/Machines/' + mb + '.js', mBots[mb]);
+                }
+                    
+                fs.writeFileSync(botDir + '/index.js', indexFile, 'utf-8');
+                fs.writeFileSync(botDir + '/databaseUtils.js', databaseUtils, 'utf-8');
+                fs.writeFileSync(botDir + '/Machines/RootDialog.js', rootDialog, 'utf-8');
                 
-            fs.writeFileSync(botDir + '/index.js', indexFile, 'utf-8');
-            fs.writeFileSync(botDir + '/databaseUtils.js', databaseUtils, 'utf-8');
-            fs.writeFileSync(botDir + '/Machines/RootDialog.js', rootDialog, 'utf-8');
+                console.log('DONE');
+            }
+
+            var sep = '/'
+            var outputBotPath = outputBotBasePath + user + sep + 'bot' + botCount + sep; 
+            console.log('BEFORE');
             
-            console.log('DONE');
-        }
-
-        var sep = '/'
-        var outputBotPath = outputBotBasePath + user + sep + 'bot' + botCount + sep; 
-        console.log('BEFORE');
-        // shell.exec('./deploy.sh ' + outputBotPath + 'index.js &');
-        exec('./deploy.sh ' + outputBotPath + 'index.js &', (err, stdout, stderr) => {
-          console.log(stdout);
-          console.log(err);
-          console.log(stderr);
-        });
-        console.log('AFTER');
-
-        db.addValues('portMappings', { 'port': port }).then(
-          function() {
-            res.send({
-              'message': 'Success',
-              'port': port
+            var server_ip = '52.226.73.198'
+            var cmd = botDir + '/dokku_deploy.sh ' + botDir + ' ' + server_ip + ' ' + user + ' bot' + botCount
+            exec(cmd, (err, stdout, stderr) => {
+                if(err) {
+                    return ws.send(JSON.stringify({
+                        message: 'Error',
+                        status: 500
+                    }))
+                }
+                var dokkuLogs = stderr;
+                var address = dokkuLogs.split('\n')
+                address = address[address.length - 5]
+                address = address.substring(address.indexOf('http://'), address.length);
+                console.log(address);
+                ws.send(JSON.stringify({
+                    'message': 'Deployment successful',
+                    'address': address,
+                    'status': 200
+                }))
             });
-          },
-          function(err) {
-            res.send({
-              'message': 'Error',
-              'error': err              
-            }).status(500);
-          }
-        )
-      });
+        });
     }
     deployAndStartService()
-  })
-})
-
-function registerAppMapping(user, count, port, cb) {
-  if (portMappings[port].used) {
-    console.log('Port already used');
-    return cb(null, 'Port already used');
-  }
-  if(portMappings[port].user != user || portMappings[port].botCount != count) {
-    console.log('------------------------------');
-    console.log(portMappings[port].user);
-    console.log(user);
-    console.log(portMappings[port].botCount);
-    console.log(count);
-    console.log('Bot port mismatch');
-    console.log('------------------------------');
-    return cb(null, 'Bot port mismatch!');
-  }
-  portMappings[port].used = true;
-  portMappings[port].user = user;
-  portMappings[port].botCount = count;
-  lock = 0;
-  console.log('CHECKPOINT 2');
-  cb('Success', null)
 }
 
-function getUnregisteredPort(user, count, cb) {
-  var registeredPorts = [];
-  // Can be improved to do database call only once.
-  db.getColumns('portMappings', {}, ['port']).then(
-      function(data) {
-        registeredPorts = _.pluck(data, 'port');
-        getPort().then(function(port) {
-          if(_.contains(data, port)) {
-            getUnregisteredPort(cb);
-          }
-          if(portMappings[port]) {
-            now = (new Date).getTime();
-            diff = now - portMappings[port]['timestamp']
-      
-            // If port has been unused for more than 60 seconds then remove the port registration
-            if(diff > 75000 && !portMappings.used) {
-              portMappings[port].user = user;
-              portMappings[port].botCount = count;
-              portMappings[port].timestamp = now;
-              portMappings[port].used = false;
-              lock = 0;
-              cb(port)
-            }
-            else {
-              getUnregisteredPort(cb);
-            }
-          }
-          else {
-            portMappings[port] = {
-              "user": user,
-              "botCount": count,
-              "used": false,
-              "timestamp": (new Date).getTime()
-            }
-            lock=0;
-            cb(port);
-          }
-        }, function(err) {
-          cb(null, err);
-        })
-      },
-      function(err) {
-        console.log('ERROR ' + err);
-        lock = 0;
-      }
-  )  
-}
-
-app.listen(PORT, function() { console.log('Successfully hosted') });
+app.listen(PORT, function() { console.log('listening on port ' + PORT) });

@@ -164,10 +164,9 @@ module.exports = machina.Fsm.extend({
                 let syntaxTree = {"intents": this.intents, "entities": this.entities, 'token': accessToken};
                 console.log(JSON.stringify(syntaxTree));
                 self = this;
-                replier(this.res, "Thank you for using bot script");
-                machineGenerator(syntaxTree, this.context.sessionId, this.botName, function(port) {
-                    replier(self.res, "Generating your bot..... " + 'http://52.226.73.198:' + port);
-                });                
+                machineGenerator(syntaxTree, this.context.sessionId, function(error, address) {
+                    replier(self.res, "Generated your bot..... " + address);
+                });
             },
 
             string: function(context, res){
