@@ -11,7 +11,7 @@ var request = require('request');
 var app = require('express')()
 var expressWs = require('express-ws')(app);
 const WebSocket = require('ws');
-
+var path = require('path');
 
 let stateTemplate = fs.readFileSync('./Machines/CompilerUtils/stateTemplate.txt', 'utf-8')
 let dialogTemplate = fs.readFileSync('./Machines/CompilerUtils/dialogTemplate.txt', 'utf-8')
@@ -126,9 +126,27 @@ function getIndexFile(intents)
     return indexFile;
 }
 
-function createBot(syntaxTree, user, botName, cb)
+function getDirectoryPathForUser(user)
 {
+  let syntaxTreeStorePath = path.join(process.cwd(), 'trees');
 
+    if(!fs.existsSync(syntaxTreeStorePath))
+        fs.mkdirSync(syntaxTreeStorePath);
+    
+    let userTreeStorePath = path.join(syntaxTreeStorePath, user);
+
+    if(!fs.existsSync(userTreeStorePath))
+        fs.mkdirSync(userTreeStorePath);
+
+    return userTreeStorePath;
+}
+
+function createBot(syntaxTree, user, botName, cb)
+{  
+    let botCount = fs.readdirSync(getDirectoryPathForUser(user)).length + 1;
+
+    let fileName = "bot" + botCount + '.json';
+    fs.writeFileSync(fileName, JSON.stringify(syntaxTree, null, '\t'));
     let dir = './OutputBots/' + user;
     if(!fs.existsSync(dir))
         fs.mkdirSync(dir);
@@ -159,6 +177,9 @@ function createBot(syntaxTree, user, botName, cb)
             }
         })
     });
+}
+
+function deployBot(userId, count) {
 
     mBots = [];
 

@@ -1,20 +1,21 @@
 var beautify = require('js-beautify').js_beautify;
 var fs = require('fs');
 var ncp = require('ncp').ncp;
+var needle = require('needle');
 var microBotGenerator = require('./microBotGenerator')
 var databaseCodeGen = require('./dataBaseCodeGen')
 var entities = require('../../entities');
 var intents = require('../../intents');
 var dialogFlow = require('../../DialogFlow');
+var path = require('path');
 
 let stateTemplate = fs.readFileSync('./Machines/CompilerUtils/stateTemplate.txt', 'utf-8')
 let dialogTemplate = fs.readFileSync('./Machines/CompilerUtils/dialogTemplate.txt', 'utf-8')
 let indexTemplate = fs.readFileSync('./Machines/CompilerUtils/indexTemplate.txt', 'utf-8')
 let updateTemplate = fs.readFileSync('./Machines/CompilerUtils/updateCode.txt', 'utf-8')
+let databaseUtilsTemplate = fs.readFileSync('./Machines/CompilerUtils/databaseUtils.txt', 'utf-8');
 
-let port = 5000;
-
-function getStateEntryCode(response, intent)
+function getStateEntryCode(response, intent, botCount)
 {
     if(response['type'] == 'text')
         return 'replier(this.uuid, "' + response['value'] + '");';
@@ -23,7 +24,7 @@ function getStateEntryCode(response, intent)
     {
         //Default table being used, need to change this, ask table name from the user in responseFlowMachine
         // context.result.parameters
-        let code = databaseCodeGen.getStoreCode(response) + '\nreplier(this.uuid, "' + response['value'] + '");';  
+        let code = databaseCodeGen.getStoreCode(response, botCount) + '\nreplier(this.uuid, "' + response['value'] + '");';  
         return code;
     }
 
@@ -34,12 +35,12 @@ function getStateEntryCode(response, intent)
 
     else if(response['type'] == 'get')
     {
-        return databaseCodeGen.getRetrieveCode(response);
+        return databaseCodeGen.getRetrieveCode(response, botCount);
     }
 
     else if(response['type'] == 'update')
     {
-        return databaseCodeGen.getUpdateCode(response);
+        return databaseCodeGen.getUpdateCode(response, botCount);
     }
 
     else
@@ -48,7 +49,7 @@ function getStateEntryCode(response, intent)
     }
 }
 
-function createStates(syntaxTree)
+function createStates(syntaxTree, botCount)
 {
     let states = []
     let intents = Object.keys(syntaxTree["intents"]);
@@ -59,12 +60,12 @@ function createStates(syntaxTree)
 
         // CODE generation part
         let response = syntaxTree["intents"][intents[i]]["response"];
-        let code = getStateEntryCode(response, intents[i]);
+        let code = getStateEntryCode(response, intents[i], botCount);
         
         if(response['type'] == 'update' || response['type'] == 'delete')
         {
             // replace newState's transition with this transition code
-            newState = newState.replace('//transitions', databaseCodeGen.getTransitionCode(response, updateTemplate + ',\n//transitions'));
+            newState = newState.replace('//transitions', databaseCodeGen.getTransitionCode(response, updateTemplate + ',\n//transitions', botCount));
         }
 
         newState = newState.replace("#code", code);
@@ -88,10 +89,10 @@ function createStates(syntaxTree)
     return states;
 }
 
-function getDialog(syntaxTree)
+function getDialog(syntaxTree, botCount)
 {
     let intents = Object.keys(syntaxTree["intents"])
-    let states = createStates(syntaxTree);
+    let states = createStates(syntaxTree, botCount);
     let dialog = dialogTemplate;
 
     for(let i in states)
@@ -121,61 +122,38 @@ function getIndexFile(intents)
     return indexFile;
 }
 
-function createBot(syntaxTree, user)
+function getDirectoryPathForUser(user)
 {
-    let rootDialog = beautify(getDialog(syntaxTree));
-    let indexFile = beautify(getIndexFile(Object.keys(syntaxTree["intents"])));
-    let microBots = microBotGenerator(syntaxTree['microBots']);
+    let syntaxTreeStorePath = path.join(process.cwd(), 'trees');
 
-    let dir = './OutputBots/' + user;
-    indexFile = indexFile.replace('#PORT', port++).replace('#PORT', port);
-
-    if(!fs.existsSync(dir))
-        fs.mkdirSync(dir);
+    if(!fs.existsSync(syntaxTreeStorePath))
+        fs.mkdirSync(syntaxTreeStorePath);
     
-    const count = fs.readdirSync(dir).length;
-    let botDir = dir + '/bot' + count;
-    
-    for(subIntent in syntaxTree['subIntents'])
-    {
-        syntaxTree['intents'][subIntent] = syntaxTree['subIntents'][subIntent];
-    }
+    let userTreeStorePath = path.join(syntaxTreeStorePath, user);
 
-// console.log(df.intents.useWebHook);
-    // let df = dialogFlow(syntaxTree['token']);
-    // df.entities.create(syntaxTree, function(error, results) {
-    //     if(error) {
-    //         return console.log("error in entity creation!");
-    //     }
-    //     console.log(results);
-    //     df.intents.useWebHook(() => {console.log('Done default')});
-    //     df.intents.create(syntaxTree, function(error, results) {        
-    //         if(error) {
-    //             return console.log (error + "\n\nError in intents creation \n\n");
-    //         }
-    //         console.log(results)
-    //     })
-    // });
+    if(!fs.existsSync(userTreeStorePath))
+        fs.mkdirSync(userTreeStorePath);
 
-    fs.mkdirSync(botDir);
-    ncp('./Template', botDir, (err) => {
-        if(err){
-            console.log('ERROR' + err);
-        }
-        else
-        {
-            for(mb in microBots)
-            {
-                fs.writeFileSync(botDir + '/Machines/' + mb + '.js', microBots[mb].replace('#machineName', mb + 'Bot'));
-                rootDialog = rootDialog.replace('//require', 'var ' + mb + ' = require("' + './' + mb + '");\n//require');
-            }
-                
-            fs.writeFileSync(botDir + '/index.js', indexFile, 'utf-8');
-            fs.writeFileSync(botDir + '/Machines/RootDialog.js', rootDialog, 'utf-8');
-            
-            console.log('DONE');
-        }
-    });
+    return userTreeStorePath;
+}
+
+function createBot(syntaxTree, user, botName, cb)
+{  
+    let botCount = fs.readdirSync(getDirectoryPathForUser(user)).length + 1;
+
+    let fileName = "bot" + botCount + '.json';
+    fs.writeFileSync(fileName, JSON.stringify(syntaxTree, null, '\t'));
+}
+
+function deployBot(userId, count) {
+
 }
 
 module.exports = createBot;
+
+
+/* TODO:
+1. Send all the files with the expanded template to the deployService.
+2. In the deployService, replace port for the index file.
+3. Copy the files to the appropriate directory. (Moving same logic to deployService.)
+*/

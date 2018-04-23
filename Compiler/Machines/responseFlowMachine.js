@@ -18,7 +18,8 @@ module.exports = machina.Fsm.extend({
 
     states:{
         askReply: {
-            _onEnter: function(){
+            _onEnter: async function(){
+                await this.res.df.setContext(this.context.sessionId, 'reply');
                 replier(this.res, 'Tell me what I should reply with when the user tells me ' + this.intentNames[this.i] + ' intention, should I perform a fetch data from any table and store or should I reply with static text. Tell db for data operation and then reply or tell txt to reply with static text');
             },
 
@@ -176,44 +177,3 @@ module.exports = machina.Fsm.extend({
         }
     }
 });
-
-/* try 
-                {
-                    let text = context.result.resolvedQuery + '';
-                    text = text.toLowerCase();
-                    let parts = text.split('$');
-                    let type;
-
-                    if(parts[0] == 'store' || parts[0] == 'get')
-                        type = parts[0]
-                    else
-                        throw new Error('Not a valid operation');
-                    
-                    let reply = parts[2];
-                    let columns = parts[1].split(',');
-                    
-                    let filter = {}
-                    if(type == 'get' && parts.length > 3)
-                    {
-                        let filterTypes = parts[3].split(',');
-                        for(let i = 0; i < filterTypes.length; ++i)
-                        {
-                            let filterParts = filterTypes[i].split('=');
-                            filter[filterParts[0]] = filterParts[1];
-                        }
-                    }
-                    
-                    this.intents[this.intentNames[this.i]]['response'] = {'value': reply, 'type': type, 'columns': columns, 'filter': filter};
-                    ++this.i;
-
-                    if(this.i < this.intentNames.length)
-                        this.transition('askReply');
-                    else
-                        this.transition('codeGen');
-                }
-
-                catch (error) 
-                {
-                    console.log(error);
-                    replier(this.res, 'Sorry I did not understand that');
-                }*/

@@ -19,7 +19,8 @@ module.exports = machina.Fsm.extend({
 
     states: {
         askName: {
-            _onEnter: function() {
+            _onEnter: async function() {
+                await this.res.df.deleteContexts(this.uuid);
             },
 
             string: function (context, res) {
@@ -340,7 +341,6 @@ module.exports = machina.Fsm.extend({
             yes: function (context, res) {
                 this.res = res;
                 this.context = context;
-                replier(this.res, "Tell me the new query type");
                 this.transition('askIntentName');
             },
 

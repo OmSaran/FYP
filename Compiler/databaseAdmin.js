@@ -13,7 +13,7 @@ async function addUser(user, database) {
             pwd: password
         });
         console.log('Changed password to ' + password);
-        return;
+        return password;
     } 
     catch (error) {
         console.log(error);
@@ -29,13 +29,14 @@ async function addUser(user, database) {
                 }
             ]
         });
-        console.log('Created User, password: ');
-        console.log(password);
-        console.log(response);   
+        return password;  
     }
     
     catch (error) 
     {
+        console.log(error);
         return null;    
     }
 }
+
+module.exports = addUser;

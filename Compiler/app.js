@@ -4,13 +4,21 @@ var http = require("https");
 var jwt = require('jsonwebtoken');
 var config = require('./config');
 var expressWs = require('express-ws')(app);
+var bodyParser = require('body-parser');
 var key = config.key;
 
 var dialogFlow = require('./Machines/dialogFlowMachine');
 var responseFlow = require('./Machines/responseFlowMachine');
+var treeUpdater = require('./Machines/CompilerUtils/machineUpdater');
 var bots = require('./bot')
 var semaphore = require('semaphore')
 var axios = require('axios')
+var dfClient = require('./Utils/dfClient');
+var databaseAdmin = require('./databaseAdmin');
+var path = require('path');
+var fs = require('fs');
+
+var df = new dfClient('5c2bca53193e4617b47df5fd37d0fa16');
 
 var semaphores = {}
 
@@ -40,7 +48,7 @@ app.get('/token', function (req, res) {
             var body = Buffer.concat(chunks);
             try {
                 let parsedBody = JSON.parse(body.toString());
-                let token = jwt.sign({ user: parsedBody['email'] }, key)
+                let token = jwt.sign({ user: (parsedBody['email'] + '').split('@')[0] }, key)
                 res.json({ "status": true, "token": token })
             } catch (error) {
                 console.error(error)
@@ -62,17 +70,6 @@ app.get('/verify', function (req, res) {
     }
 });
 
-
-async function callDialogFlow(query, sessionId) {
-    let clientId = '5c2bca53193e4617b47df5fd37d0fa16'
-    const response = await axios.get('https://api.dialogflow.com/v1/query?v=20150910&lang=en&sessionId=' + sessionId + '&query=' + query, {
-        'headers': {
-            'Authorization': 'Bearer ' + clientId
-        }
-    });
-    return response;
-}
-
 app.ws('/message', function (ws, req) {
     ws.on('message', async function (msg) {
 
@@ -82,12 +79,13 @@ app.ws('/message', function (ws, req) {
 
             let uuid = jwt.verify(message['user'], key).user;
 
-            let response = await callDialogFlow(message['text'], uuid);
+            let response = await df.callDialogFlow(message['text'], uuid);
 
-            if (response.data.result.actionIncomplete)
+            if (response.data.result.actionIncomplete || ("" + response.data.result.fulfillment.speech).toLowerCase().startsWith('should i'))
                 res.send(response.data.result.fulfillment.speech);
             else
                 handleBot(response.data, res, uuid);
+
         } catch (error) {
             console.log(error);
             console.log('User is using an un authenticated web socket');
@@ -98,12 +96,21 @@ app.ws('/message', function (ws, req) {
 
 function handleBot(dfResponse, res, uuid) {
 
+    let intent = dfResponse.result.metadata.intentName;
+
+    if(intent == 'restart')
+    {
+        semaphores[uuid] = undefined;
+        bots[uuid] = undefined;
+    }
+
     if (semaphores[uuid] == undefined) {
         semaphores[uuid] = semaphore(1);
     }
 
     res.semaphore = semaphores[uuid];
     res.uuid = uuid;
+    res.df = df;
 
     if (bots[uuid] == undefined) {
         semaphores[uuid].take(function() {    
@@ -115,7 +122,7 @@ function handleBot(dfResponse, res, uuid) {
         return;
     }
 
-    let intent = dfResponse.result.metadata.intentName;
+    console.log('Intent is : ' + intent);
 
     if (intent == 'Default Fallback Intent')
         intent = 'string'
@@ -165,6 +172,43 @@ app.get('/query', function (request, response) {
     }
     catch (error) {
         res.send("Login and try again");
+    }
+});
+
+app.get('/dbpass', async function(request, response) {
+    try {
+        let user = jwt.verify(request.get('Authorization'), key).user;
+        let password = await databaseAdmin(user, user);
+        response.json({'password': password, 'user': user});
+    } catch (error) {
+        console.log(error);
+        response.json({'password': "Login and try again"});
+    }
+});
+
+app.get('/trees', function(request, response){
+    try {
+        let user = jwt.verify(request.get('Authorization'), key).user;
+        let files = fs.readdirSync(path.join(process.cwd(), 'trees', user));
+        let trees = {}
+        files.map(function(file) {
+            trees[file.split('.')[0]] = (JSON.parse(fs.readFileSync(path.join(process.cwd(), 'trees', user, file))));
+        });
+        response.json(trees);
+    } catch (error) {
+        console.log(error);
+        response.json([]);
+    }
+});
+
+app.put('/tree/restart', bodyParser.json(), function(request, response) {
+    try {
+        let user = jwt.verify(request.get('Authorization'), key).user;
+        treeUpdater(request.body.bot, user, request.body.tree);
+        response.json({'status': "Done"});
+    } catch (error) {
+        console.log(error);
+        response.json({'status': "Fail"});
     }
 });
 
