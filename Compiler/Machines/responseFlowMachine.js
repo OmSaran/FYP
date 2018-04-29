@@ -168,8 +168,9 @@ module.exports = machina.Fsm.extend({
                 console.log(JSON.stringify(syntaxTree));
                 self = this;
                 replier(self.res, "Generating your bot..... ");
-                machineGenerator.createBot(syntaxTree, this.context.sessionId, this.botName, function(error, address) {
-                    replierAsync(self.res, "Generated your bot..... " + address);
+                machineGenerator.createBot(syntaxTree, this.context.sessionId, this.botName, function(error, msg) {
+                    replierAsync(self.res, msg.instruction);
+                    replierAsync(self.res, "Generated your bot..... " + msg.address);
                 });
             },
 
