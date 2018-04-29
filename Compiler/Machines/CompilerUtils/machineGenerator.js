@@ -181,7 +181,6 @@ function createBot(syntaxTree, user, botName, cb)
             }
         })
     });
-    cb(null, 'Starting to deploy your bot!');
 
     mBots = [];
 
