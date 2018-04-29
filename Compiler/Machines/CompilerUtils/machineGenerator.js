@@ -209,11 +209,11 @@ function createBot(syntaxTree, user, botName, cb)
         if(msg.status == 500) {
             cb('Error');
         }
-        msg.instruction = 'Head over to the agent you created in DialogFlow. Go to the Fulfillment section and add this to as your URL and then hit save!'
+        // msg.instruction = 'Head over to the agent you created in DialogFlow. Go to the Fulfillment section and add this to as your URL and then hit save!'
         console.log('----------');
         console.log(JSON.stringify(msg));
         console.log('----------');
-        cb(null, msg);
+        cb(null, msg.address);
         ws.close()
     })
 

@@ -172,7 +172,7 @@ module.exports = machina.Fsm.extend({
                     if(error) {
                         return replierAsync(self.res, 'Failed to deploy bot!');
                     }
-                    replierAsync(self.res, msg.instruction);
+                    // replierAsync(self.res, msg.instruction);
                     replierAsync(self.res, "Generated your bot..... " + msg.address);
                 });
             },
