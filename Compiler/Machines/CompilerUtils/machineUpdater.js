@@ -7,7 +7,7 @@ function machineUpdater(bot, user, body, cb) {
     console.log(filePath);
     if(fs.existsSync(filePath))
         fs.writeFileSync(filePath, body, 'utf-8');
-    machineGenerator.updateBot(body, user, bot, function(err, results) {
+    machineGenerator.updateBot(JSON.parse(body), user, bot, function(err, results) {
         if(err) {
             return cb('Error', null)
         }
