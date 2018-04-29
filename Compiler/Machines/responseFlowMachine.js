@@ -173,8 +173,10 @@ module.exports = machina.Fsm.extend({
                     if(error) {
                         return replierAsync(self.res, 'Failed to deploy bot!');
                     }
-                    replierAsync(self.res, msg.instruction);
-                    replierAsync(self.res, "Deployed your bot with ip - " + msg.address);
+                    if(msg.instruction)
+                        replierAsync(self.res, msg.instruction);
+                    if(msg.address)
+                        replierAsync(self.res, "Deployed your bot with ip - " + msg.address);
                 });
             },
 
