@@ -195,6 +195,7 @@ app.get('/trees', function(request, response){
         if(!fs.existsSync(path.join(process.cwd(), 'trees', user)))
         {
             response.json([]);
+            return;
         }
 
         let files = fs.readdirSync(path.join(process.cwd(), 'trees', user));
