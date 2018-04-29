@@ -113,6 +113,7 @@ function handleDeployPOST(ws, msg) {
     }
     var user = req.body.user;
     var botCount = req.body.botCount;
+    console.log('botCount = ' + botCount);
     var port = req.body.port;
     var indexFile = req.body.indexFile;
     var databaseUtils = req.body.databaseUtils;
