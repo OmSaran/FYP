@@ -244,7 +244,7 @@ var Chat = /** @class */ (function (_super) {
     Chat.prototype.handleNewUserMessage = function (newMessage) {
         var data = null;
         if (this.state.ws == null) {
-            var webSocket_1 = new WebSocket("ws://localhost:5000/message");
+            var webSocket_1 = new WebSocket("ws://botc.keygit.info:5000/message");
             var context_1 = this;
             this.setState({ ws: webSocket_1 });
             webSocket_1.onopen = function () {

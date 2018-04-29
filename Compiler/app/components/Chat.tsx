@@ -83,7 +83,7 @@ class Chat extends React.Component<{}, ChatState>
         var data = null;
 
         if(this.state.ws == null) {
-            let webSocket = new WebSocket("ws://localhost:5000/message");
+            let webSocket = new WebSocket("ws://botc.keygit.info:5000/message");
             let context = this;
             this.setState({ws: webSocket});
             webSocket.onopen = function() {
