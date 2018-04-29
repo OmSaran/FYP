@@ -347,7 +347,7 @@ var DataAccess = /** @class */ (function (_super) {
     };
     DataAccess.prototype.render = function () {
         return React.createElement(Card_1.Card, { style: { width: "70%", margin: 20 } },
-            React.createElement(Card_1.CardHeader, { title: "See and modify the data collected by your bots", subtitle: "You can generate new password here" }),
+            React.createElement(Card_1.CardHeader, { title: "See and modify the data collected by your bots", subtitle: "You can generate new password here and add it in the database client with database name same as user name and HOST as botc.keygit.info" }),
             React.createElement(Card_1.CardText, null, "Password generated here appears only once, make sure to store it somewhere safe."),
             React.createElement(Card_1.CardText, null, this.state.text),
             React.createElement(Card_1.CardActions, null,
