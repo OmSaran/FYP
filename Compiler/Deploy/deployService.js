@@ -128,7 +128,7 @@ function handleDeployPOST(ws, msg) {
             fs.mkdirSync(dir);
 
         // const count = fs.readdirSync(dir).length;
-        let botDir = dir + '/bot' + botCount;
+        let botDir = dir + '/bot_' + botCount;
         fs.mkdirSync(botDir);
 
         console.log('MADE DIRECTORY!! ' + botDir);
@@ -155,7 +155,7 @@ function handleDeployPOST(ws, msg) {
             console.log('BEFORE');
             
             var server_ip = '52.226.73.198'
-            var cmd = botDir + '/dokku_deploy.sh ' + botDir + ' ' + server_ip + ' ' + user + ' bot' + botCount
+            var cmd = botDir + '/dokku_deploy.sh ' + botDir + ' ' + server_ip + ' ' + user + ' bot_' + botCount
             // ws.send(JSON.stringify({
             //     'message': 'Deployment successful',
             //     'address': 'address',
