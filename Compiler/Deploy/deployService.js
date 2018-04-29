@@ -68,11 +68,11 @@ function handleDeployDELETE(ws, msg) {
 function handleDeployPUT(ws, msg) {
     var body = msg.payload;
     var user = body.user;
-    var botDir = 'bot' + body.botCount;
+    var botName = body.botName;
     var rootDialog = body.rootDialog;
 
     var sep = '/'
-    var dir = '../OutputBots' + sep + user + sep + botDir
+    var dir = '../OutputBots' + sep + user + sep + botName
 
     // Checking if bot dir exists. If not throw error.
     if(!fs.existsSync(dir))
@@ -82,6 +82,9 @@ function handleDeployPUT(ws, msg) {
     fs.writeFileSync(rootDir, rootDialog);
 
     var cmd = dir + sep + 'dokku_update.sh ' + dir;
+
+    console.log('Command = ' + cmd);
+
     exec(cmd, (err, stdout, stderr) => {
         if(err) {
             console.log(err);

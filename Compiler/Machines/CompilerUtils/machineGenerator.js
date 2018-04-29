@@ -146,7 +146,7 @@ function createBot(syntaxTree, user, botName, cb)
     let botCount = fs.readdirSync(getDirectoryPathForUser(user)).length + 1;
     botCount = botName + '_' + botCount;
 
-    let fileName = "bot" + botCount + '.json';
+    let fileName = "bot_" + botCount + '.json';
     fs.writeFileSync(path.join(getDirectoryPathForUser(user), fileName), JSON.stringify(syntaxTree, null, '\t'), 'utf-8');
 
     if(!fs.existsSync('./OutputBots'))
@@ -215,9 +215,37 @@ function createBot(syntaxTree, user, botName, cb)
 
 }
 
-function deployBot(userId, count) {
+function updateBot(syntaxTree, user, botName, cb)
+{
 
-    
+    let rootDialog = beautify(getDialog(syntaxTree, botCount));
+
+    const ws = new WebSocket('ws://localhost:27015' + '/deploy', {
+        perMessageDeflate: false
+    });
+
+    obj = {
+        user: user,
+        botName: bot,
+        rootDialog: rootDialog
+    }
+
+    ws.on('open', function open() {
+        ws.send(JSON.stringify({method: 'PUT', payload: obj}));
+    })
+    ws.on('message', function(msg) {
+        msg = JSON.parse(msg);
+        if(msg.status == 500) {
+            cb('Error');
+        }
+        cb(null, msg.output);
+        ws.close()
+    })
 }
 
-module.exports = createBot;
+obj = {
+    createBot: createBot,
+    updateBot: updateBot
+}
+
+module.exports = obj;

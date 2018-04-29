@@ -213,8 +213,13 @@ app.get('/trees', function(request, response){
 app.put('/tree/restart', bodyParser.json(), function(request, response) {
     try {
         let user = jwt.verify(request.get('Authorization'), key).user;
-        treeUpdater(request.body.bot, user, request.body.tree);
-        response.json({'status': "Done"});
+        treeUpdater(request.body.bot, user, request.body.tree, function(err, res) {
+            if(err) {
+                throw new Error()
+            }
+            response.json({'status': "Done", "logs": res});
+        });
+        
     } catch (error) {
         console.log(error);
         response.json({'status': "Fail"});
