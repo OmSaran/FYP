@@ -21,14 +21,16 @@ module.exports = machina.Fsm.extend({
         askReply: {
             _onEnter: async function(){
                 await this.res.df.setContext(this.context.sessionId, 'reply');
-                replier(this.res, 'Tell me what I should reply with when the user tells me ' + this.intentNames[this.i] + ' intention, should I perform a fetch data from any table and store or should I reply with static text. Tell db for data operation and then reply or tell txt to reply with static text');
+                replier(this.res, 'Tell me what I should reply with when the user tells me ' + this.intentNames[this.i] + ' intention, should I perform a fetch data from any table and store or should I reply with static text.');
+                replierAsync(this.res, 'Tell data for data operation and then reply');
+                replierAsync(this.res, 'tell text to reply with static text');
             },
 
-            string: function(context, res){
+            '*': function(context, res){
                 console.log("came here");
-                this.context = context;
-                this.res = res;
-                let type = context.result.resolvedQuery + '';
+                
+                
+                let type = this.context.result.resolvedQuery + '';
                 type = type.toLowerCase();
                 
                 if(type == 'data')
@@ -36,7 +38,7 @@ module.exports = machina.Fsm.extend({
                 else if(type == 'text')
                     this.transition('getStaticText');
                 else
-                    replier(this.res, 'Sorry I did not understand, tell is it db or text');
+                    replier(this.res, 'Sorry I did not understand, let me know if it is data or text');
             }
         },  
 
@@ -46,8 +48,8 @@ module.exports = machina.Fsm.extend({
             },
 
             dbGetRule_yes: function(context, res) {
-                this.context = context;
-                this.res = res;
+                
+                
                 let contexts = context.result.contexts;
                 let table = context.result.contexts[contexts.length - 1].parameters.tableName;
                 let parameters = context.result.contexts[contexts.length - 1].parameters.coloumnNames.split(",");
@@ -69,8 +71,8 @@ module.exports = machina.Fsm.extend({
             },
 
             dbStoreRule_yes: function(context, res){
-                this.context = context;
-                this.res = res;
+                
+                
                 console.log(JSON.stringify(context));
                 let contexts = context.result.contexts;
                 let table = context.result.contexts[contexts.length - 1].parameters.tableName;
@@ -92,8 +94,8 @@ module.exports = machina.Fsm.extend({
             },
 
             dbUpdateRule_yes: function(context, res) {
-                this.context = context;
-                this.res = res;
+                
+                
                 let contexts = context.result.contexts;
                 let table = context.result.contexts[contexts.length - 1].parameters.tableName;
                 let parameters = context.result.contexts[contexts.length - 1].parameters.coloumnNames.split(",")
@@ -112,11 +114,11 @@ module.exports = machina.Fsm.extend({
                 this.transition('askReply')
             },
 
-            string: function(context, res)
+            '*': function(context, res)
             {
-                this.context = context;
-                this.res = res;
-                let type = context.result.resolvedQuery + '';
+                
+                
+                let type = this.context.result.resolvedQuery + '';
                 type = type.toLowerCase();
             
                replier(this.res, 'I did not get it, what do you want to do? store or get or update?')
@@ -129,13 +131,13 @@ module.exports = machina.Fsm.extend({
                 replier(this.res, 'ok, tell me what I should respond with, I will tell the exact same thing when the user\'s intention is ' + this.intentNames[this.i]);
             },
 
-            string: function(context, res){
-                this.context = context;
-                this.res = res;
-                this.context = context;
-                this.res = res;
+            '*': function(context, res){
+                
+                
+                
+                
 
-                this.intents[this.intentNames[this.i]]['response'] = {'value': context.result.resolvedQuery, 'type': 'text'};
+                this.intents[this.intentNames[this.i]]['response'] = {'value': this.context.result.resolvedQuery, 'type': 'text'};
                 ++this.i;
 
                 if(this.i < this.intentNames.length)
@@ -151,10 +153,10 @@ module.exports = machina.Fsm.extend({
                 replier(this.res, 'Sign into https://console.dialogflow.com/ and create an agent. Once the agent is created, click on the gear icon on the left navigation bar and copy the developer access token and paste it here');
             },
 
-            string: function(context, res){
-                this.context = context;
-                this.res = res;
-                let accessToken = context.result.resolvedQuery;
+            '*': function(context, res){
+                
+                
+                let accessToken = this.context.result.resolvedQuery;
                 // create Dialogflow model
                 this.transition('codeGen', accessToken);
             }
@@ -171,9 +173,9 @@ module.exports = machina.Fsm.extend({
                 });
             },
 
-            string: function(context, res){
-                this.context = context;
-                this.res = res;
+            '*': function(context, res){
+                
+                
                 replier(this.res, 'Thank you for using this service to generate your own bot, you can tell restart to create a new bot now.');
             }
         }

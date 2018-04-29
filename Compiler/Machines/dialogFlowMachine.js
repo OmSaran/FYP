@@ -2,6 +2,7 @@ var machina = require('machina')
 var replier = require('../Utils/reply')
 var bots = require('../bot')
 var responseBot = require('./responseFlowMachine')
+var replierAsync = require('../Utils/replyAsync')
 
 module.exports = machina.Fsm.extend({
 
@@ -19,39 +20,47 @@ module.exports = machina.Fsm.extend({
 
     states: {
         askName: {
-            _onEnter: async function() {
+            _onEnter: async function () {
                 await this.res.df.deleteContexts(this.context.sessionId);
             },
 
             string: function (context, res) {
-                this.res = res;
-                this.context = context;
-                this.botName = context.result.resolvedQuery;
+
+
+                this.botName = this.context.result.resolvedQuery.replace(/[\W_]+/g, "_");;
+                this.transition('confirmBotName');
+            },
+
+            '*': function (context, res) {
+
+
+                this.botName = this.context.result.resolvedQuery.replace(/[\W_]+/g, "_");;
                 this.transition('confirmBotName');
             }
         },
 
         confirmBotName: {
-            _onEnter: function() {
+            _onEnter: function () {
                 replier(this.res, "Ok, Shall I name it as " + this.botName + "?");
             },
 
-            yes: function(context, res) {
-                this.res = res;
-                this.context = context;
+            yes: function (context, res) {
+
+
                 this.transition('askIntentName');
             },
 
-            no: function(context, res) {
-                this.res = res;
-                this.context = context;
+            no: function (context, res) {
+
+
+                replier(this.res, "What should I name it then");
                 this.transition('askName');
             },
 
-            string: function (context, res) {
-                this.res = res;
-                this.context = context;
-                replier(this.res, "sorry :( ");
+            '*': function (context, res) {
+
+
+                replier(this.res, "Shall I name it as " + this.botName + "?");
             }
         },
 
@@ -60,10 +69,10 @@ module.exports = machina.Fsm.extend({
                 replier(this.res, "Ok, Tell me an activity your bot can do");
             },
 
-            string: function (context, res) {
-                this.res = res;
-                this.context = context;
-                this.intentName = context.result.resolvedQuery.replace(/[\W_]+/g,"_");
+            '*': function (context, res) {
+
+
+                this.intentName = this.context.result.resolvedQuery.replace(/[\W_]+/g, "_");
                 this.transition('confirmIntentName');
                 // this.transition('askEntityName');
             },
@@ -71,26 +80,27 @@ module.exports = machina.Fsm.extend({
 
         confirmIntentName: {
             _onEnter: function () {
-                replier(this.res, "ok, confirm adding the new query-type " + this.intentName + " (yes/no)");
+                replier(this.res, "ok, confirm adding the new Activity " + this.intentName + " (yes/no)");
             },
 
             yes: function (context, res) {
-                this.res = res;
-                this.context = context;
+
+
                 this.transition("askIfEntitiesNeeded");
             },
 
             no: function (context, res) {
-                this.res = res;
-                this.context = context;
-                replier(this.res, "Ok, I will not add it. Enter new query-type for me to help you further :)");
+
+
+                replierAsync(this.res, "Ok, I will not add it. Enter new query-type for me to help you further :)");
                 this.transition('askIntentName');
             },
 
-            string: function (context, res) {
-                this.res = res;
-                this.context = context;
-                replier(this.res, "sorry :( ");
+            '*': function (context, res) {
+
+
+                replierAsync(this.res, "I did not understand that");
+                replier(this.res, "Shall I add the new Activity " + this.intentName + " (yes/no)");
             }
         },
 
@@ -101,36 +111,36 @@ module.exports = machina.Fsm.extend({
             },
 
             yes: function (context, res) {
-                this.res = res;
-                this.context = context;
+
+
                 this.transition("askEntityName");
             },
 
             no: function (context, res) {
-                this.res = res;
-                this.context = context;
+
+
                 this.transition("askUtterances");
             },
 
-            string: function (context, res) {
-                this.res = res;
-                this.context = context;
-                replier(this.res, "Sorry, I did not understand that. Do you want your new bot to collect any fields with the current intent " + this.intentName + " ? (yes/ no)");
+            '*': function (context, res) {
+
+
+                replier(this.res, "Sorry, I did not understand that. Do you want your new bot to collect any fields with the current Activity " + this.intentName + " ? (yes/ no)");
             }
         },
 
         askEntityName: {
 
-            _onEnter: function() {
+            _onEnter: function () {
                 // console.log(this);
                 replier(this.res,
                     "Enter your field name"
                 );
             },
 
-            string: function (context, res) {
-                this.res = res;
-                this.context = context;
+            '*': function (context, res) {
+
+
 
                 var fieldName = String(this.context.result.resolvedQuery);
                 fieldName = fieldName.toLowerCase();
@@ -145,19 +155,19 @@ module.exports = machina.Fsm.extend({
         },
 
         askEntityType: {
-            _onEnter: function() {
+            _onEnter: function () {
                 replier(this.res,
-                    "Enter the type of the field. Supported types are num, test, dateTime" + 
-                    "If you want your field to take only a set of values type them " + 
+                    "Enter the type of the field. Supported types are num, test, dateTime" +
+                    "If you want your field to take only a set of values type them " +
                     "in this fashion - 'value1, value2..' "
                 );
             },
 
-            string: function(context, res) {
-                this.res = res;
-                this.context = context;
+            '*': function (context, res) {
 
-                var fieldType = String(context.result.resolvedQuery);                
+
+
+                var fieldType = String(this.context.result.resolvedQuery);
 
                 var fieldName = this.entity.name;
 
@@ -188,17 +198,17 @@ module.exports = machina.Fsm.extend({
         },
 
         askEntityList: {
-            _onEnter: function() {
+            _onEnter: function () {
 
                 this.entity.create = function () {
 
                     if (this.stateMachine.intents[this.stateMachine.intentName] == undefined)
                         this.stateMachine.intents[this.stateMachine.intentName] = { "parameters": [] }
 
-                    this.stateMachine.intents[this.stateMachine.intentName]["parameters"].push({ 
-                        "name": this.name, 
-                        "type": this.type, 
-                        "isList": this.isList 
+                    this.stateMachine.intents[this.stateMachine.intentName]["parameters"].push({
+                        "name": this.name,
+                        "type": this.type,
+                        "isList": this.isList
                     });
 
                     this.stateMachine.transition("askMoreEntity");
@@ -209,9 +219,9 @@ module.exports = machina.Fsm.extend({
                 );
             },
 
-            yes: function(context, res) {
-                this.res = res;
-                this.context = context; 
+            yes: function (context, res) {
+
+
 
                 this.entity.isList = true;
                 this.entity.create();
@@ -219,34 +229,42 @@ module.exports = machina.Fsm.extend({
                 this.transition('askMoreEntity');
             },
 
-            no: function(context, res) {
-                this.res = res;
-                this.context = context;
+            no: function (context, res) {
 
-                this.entity.isList = false;                
+
+
+                this.entity.isList = false;
                 this.entity.create();
 
                 this.transition('askMoreEntity');
+            },
+
+            '*': function (context, res) {
+
+
+                replier(this.res,
+                    "Is the field a list? i.e can it take more than one value?"
+                );
             }
         },
 
         askEntity: {
             _onEnter: function () {
-                replier(this.res, 
-                    "Enter your field name and the type of the field you are expecting " + 
-                    "(for example if the field is numberOfPeople the type will be number) " + 
-                    "by a '$' default supported types are num, text, dateTime. " + 
-                    "If you want your field to take only a set of values type them " + 
-                    "in this fashion after $ 'value1, value2' type the last " + 
+                replier(this.res,
+                    "Enter your field name and the type of the field you are expecting " +
+                    "(for example if the field is numberOfPeople the type will be number) " +
+                    "by a '$' default supported types are num, text, dateTime. " +
+                    "If you want your field to take only a set of values type them " +
+                    "in this fashion after $ 'value1, value2' type the last " +
                     "value list if your field can take multiple values at once (example pizza toppings)"
                 );
             },
 
             string: function (context, res) {
-                this.res = res;
-                this.context = context;
+
+
                 try {
-                    let text = context.result.resolvedQuery + "";
+                    let text = this.context.result.resolvedQuery + "";
                     let parts = text.split('$');
                     let fieldName = parts[0].toLowerCase();
                     let fieldType = parts[1].toLowerCase();
@@ -297,20 +315,20 @@ module.exports = machina.Fsm.extend({
             },
 
             yes: function (context, res) {
-                this.context = context;
-                this.res = res;
+
+
                 this.transition("askEntityName");
             },
 
             no: function (context, res) {
-                this.context = context;
-                this.res = res;
+
+
                 this.transition("askUtterances");
             },
 
-            string: function (context, res) {
-                this.context = context;
-                this.res = res;
+            '*': function (context, res) {
+
+
                 replier(this.res, "I did not quite get that, please tell yes or no");
             }
         },
@@ -320,12 +338,12 @@ module.exports = machina.Fsm.extend({
                 replier(this.res, "So how do you expect your customers to convey this query to your new assistant ? Let me know them, enter a $ between them");
             },
 
-            string: function (context, res) {
-                this.context = context;
-                this.res = res;
+            '*': function (context, res) {
+
+
                 if (this.intents[this.intentName] == undefined)
-                        this.intents[this.intentName] = { "parameters": [] }
-                let text = context.result.resolvedQuery + "";
+                    this.intents[this.intentName] = { "parameters": [] }
+                let text = this.context.result.resolvedQuery + "";
                 let utternaces = text.split('$');
                 this.intents[this.intentName]["utterances"] = utternaces;
                 this.transition("askMoreIntents");
@@ -339,17 +357,24 @@ module.exports = machina.Fsm.extend({
             },
 
             yes: function (context, res) {
-                this.res = res;
-                this.context = context;
+
+
                 this.transition('askIntentName');
             },
 
             no: function (context, res) {
-                this.res = res;
-                this.context = context;
+
+
                 let uuid = context.sessionId;
                 console.log('changing bot')
-                bots[uuid] = new responseBot({context: context, res: res, intents: this.intents, entities: this.entities, botName: this.botName});
+                bots[uuid] = new responseBot({ context: context, res: res, intents: this.intents, entities: this.entities, botName: this.botName });
+            },
+
+            '*': function (context, res) {
+
+
+                replierAsync(this.res, "I did not understand that");
+                replier(this.res, "Do you wish to add more intents? (yes/no)");
             }
         }
     }

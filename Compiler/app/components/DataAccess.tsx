@@ -33,7 +33,7 @@ class DataAccess extends React.Component<undefined, DataAccessState> {
         return <Card style = {{width: "70%", margin: 20}}>
             <CardHeader
                 title="See and modify the data collected by your bots"
-                subtitle="You can generate new password here"
+                subtitle="You can generate new password here and add it in the database client with database name same as user name and HOST as botc.keygit.info"
             />
             <CardText>
                 Password generated here appears only once, make sure to store it somewhere safe.

@@ -89,7 +89,7 @@ app.ws('/message', function (ws, req) {
         } catch (error) {
             console.log(error);
             console.log('User is using an un authenticated web socket');
-            ws.send("Login and try again");
+            ws.send("Say restart and try again...");
         }
     });
 });
@@ -128,6 +128,8 @@ function handleBot(dfResponse, res, uuid) {
         intent = 'string'
 
     semaphores[uuid].take(function() {
+        bots[uuid].context = dfResponse;
+        bots[uuid].res = res;
         bots[uuid].handle(intent, dfResponse, res);
     });
 }
@@ -189,6 +191,12 @@ app.get('/dbpass', async function(request, response) {
 app.get('/trees', function(request, response){
     try {
         let user = jwt.verify(request.get('Authorization'), key).user;
+        
+        if(!fs.existsSync(path.join(process.cwd(), 'trees', user)))
+        {
+            response.json([]);
+        }
+
         let files = fs.readdirSync(path.join(process.cwd(), 'trees', user));
         let trees = {}
         files.map(function(file) {
