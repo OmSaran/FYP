@@ -226,7 +226,7 @@ function updateBot(syntaxTree, user, botName, cb)
 
     obj = {
         user: user,
-        botName: bot,
+        botName: botName,
         rootDialog: rootDialog
     }
 
