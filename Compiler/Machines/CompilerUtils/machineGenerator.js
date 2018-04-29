@@ -217,7 +217,8 @@ function createBot(syntaxTree, user, botName, cb)
 
 function updateBot(syntaxTree, user, botName, cb)
 {
-
+    var botCount = botName.split('_');
+    botCount = botCount[botCount.length-1];
     let rootDialog = beautify(getDialog(syntaxTree, botCount));
 
     const ws = new WebSocket('ws://localhost:27015' + '/deploy', {
